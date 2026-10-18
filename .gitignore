@@ -1,0 +1,24 @@
+# build artifacts
+build/
+dist/
+*.dll
+*.pdb
+*.cache
+*.zip
+
+# local mod assets (not part of the source repo)
+Marks/
+Covers/
+Difficulties/
+config.json
+ratings.txt
+judges.txt
+autorating_cache.json
+
+# tooling (bring your own Roslyn)
+tools/
+
+# OS junk
+Thumbs.db
+desktop.ini
+.DS_Store
