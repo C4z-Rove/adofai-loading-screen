@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.1
+- The judgment used for a clear is now **recorded automatically** when a level is finished
+  (`States.Won`), read from `GCS.difficulty` (Lenient / Normal / Strict). The game does not store
+  per-chart judgments, so this is the only exact source — no pixel sampling needed.
+- `RecordJudge` config switch.
+
 ## 2.3.0
 - Rating window: added a **judgment selector** (wide / normal / strict / none). The choice is saved to
   `judges.txt` and synchronised to LevelLibrary when it is loaded.
