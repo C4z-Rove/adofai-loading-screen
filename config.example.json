@@ -3,7 +3,7 @@
   "Dim": 0.42,
   "ShowPercent": true,
   "KenBurns": true,
-  "PreviewOnStart": true,
+  "PreviewOnStart": false,
   "RatingPrompt": true,
   "SkipRatedPrompt": true,
   "Hotkey": "F7",
@@ -40,5 +40,6 @@
   "BarSweep": true,
   "BarSweepSeconds": 1.1,
   "BarSweepWidth": 0.25,
-  "PercentFont": 24.0
+  "PercentFont": 24.0,
+  "RecordJudge": true
 }

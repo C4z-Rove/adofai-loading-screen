@@ -31,6 +31,7 @@ namespace PhigrosLoading
                 InGameBadge.Init();
                 ClsBadge.Init();
                 RatingMarks.Init();
+                JudgmentRecorder.Init();
                 HotkeyWatcher.Init();
                 LanguageFixer.Init();
 
@@ -45,7 +46,7 @@ namespace PhigrosLoading
                 modEntry.OnToggle = OnToggle;
                 Active = true;
 
-                Log.Log("Adofai Loading Screen v2.3.0 loaded. ModPath = " + ModPath);
+                Log.Log("Adofai Loading Screen v2.3.1 loaded. ModPath = " + ModPath);
                 return true;
             }
             catch (Exception e)

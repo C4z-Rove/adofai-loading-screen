@@ -73,6 +73,8 @@ Rating icons are read from, in order:
 
 You can simply copy `LevelLibrary/assets/marks/*.png` into `<mod>/Marks/`.
 `wide.png` / `normal.png` / `strict.png` are used for the judgment badge.
+The judgment of a clear is recorded automatically (read from `GCS.difficulty` when the level is
+finished); it can also be set manually in the rating window.
 
 ---
 

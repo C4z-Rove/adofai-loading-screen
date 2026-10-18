@@ -33,6 +33,9 @@ namespace PhigrosLoading
         /// <summary>启动后把语言按设置重新应用一次（修复被锁成中文的问题）</summary>
         public bool FixLanguage = true;
 
+        /// <summary>通关时记录用的判定（wide/normal/strict）</summary>
+        public bool RecordJudge = true;
+
         /// <summary>加载画面最短显示时间（秒）；加载本身更慢时不会额外延长</summary>
         public float MinLoadingSeconds = 1.2f;
 
@@ -134,6 +137,7 @@ namespace PhigrosLoading
             SkipRatedPrompt = d.SkipRatedPrompt;
             Hotkey = d.Hotkey;
             FixLanguage = d.FixLanguage;
+            RecordJudge = d.RecordJudge;
             MinLoadingSeconds = d.MinLoadingSeconds;
             MaxLoadingSeconds = d.MaxLoadingSeconds;
             ExitAnimation = d.ExitAnimation;
