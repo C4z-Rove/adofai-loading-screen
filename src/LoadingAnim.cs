@@ -468,6 +468,7 @@ namespace PhigrosLoading
             public EaseKind DigitEase;
             public int DigitDir;        // 0 下方 1 上方 2 左右 3 四角 4 螺旋
             public float Glitch;        // 0..1
+            public int GlitchCount;     // 故障触发次数（不循环）
             public bool DigitsFirst;
             public bool Flash;
             public bool Wave;
@@ -512,6 +513,7 @@ namespace PhigrosLoading
             p.DigitEase = EaseKind.Cubic;
             p.DigitDir = 0;
             p.Glitch = 0.35f;
+            p.GlitchCount = 2;
             p.DigitsFirst = false;
             p.Flash = false;
             p.Wave = false;
@@ -524,6 +526,7 @@ namespace PhigrosLoading
                     p.DigitStart = 0.55f;
                     p.DigitDur = 1.05f;
                     p.Glitch = 0f;
+                    p.GlitchCount = 0;
                     break;
 
                 case BossKind.Classic:
@@ -539,6 +542,7 @@ namespace PhigrosLoading
                     p.DigitEase = EaseKind.Back;
                     p.DigitDir = 2;
                     p.Glitch = 0.18f;
+                    p.GlitchCount = 1;
                     break;
 
                 case BossKind.DropBounce:
@@ -550,6 +554,7 @@ namespace PhigrosLoading
                     p.DigitEase = EaseKind.Bounce;
                     p.DigitDir = 1;
                     p.Glitch = 0.25f;
+                    p.GlitchCount = 1;
                     p.Flash = true;
                     break;
 
@@ -561,6 +566,7 @@ namespace PhigrosLoading
                     p.DigitDur = 0.55f;
                     p.DigitEase = EaseKind.Linear;
                     p.Glitch = 0.45f;
+                    p.GlitchCount = 2;
                     break;
 
                 case BossKind.Arc:
@@ -572,6 +578,7 @@ namespace PhigrosLoading
                     p.DigitDur = 1.0f;
                     p.DigitDir = 3;
                     p.Glitch = 0.2f;
+                    p.GlitchCount = 1;
                     break;
 
                 case BossKind.HeavyGlitch:
@@ -579,6 +586,7 @@ namespace PhigrosLoading
                     p.DigitStart = 0.75f;
                     p.DigitDur = 1.35f;
                     p.Glitch = 0.95f;
+                    p.GlitchCount = 3;
                     break;
 
                 case BossKind.DigitsFirst:
@@ -590,6 +598,7 @@ namespace PhigrosLoading
                     p.DigitStart = 0.30f;
                     p.DigitDur = 1.1f;
                     p.Glitch = 0.3f;
+                    p.GlitchCount = 2;
                     break;
 
                 case BossKind.Ultimate:
@@ -604,6 +613,7 @@ namespace PhigrosLoading
                     p.DigitEase = EaseKind.Bounce;
                     p.DigitDir = 1;
                     p.Glitch = 0.85f;
+                    p.GlitchCount = 3;
                     p.Flash = true;
                     p.Wave = true;
                     break;
@@ -620,6 +630,7 @@ namespace PhigrosLoading
                     p.DigitDur = 1.2f;
                     p.DigitDir = 4;
                     p.Glitch = 0.3f;
+                    p.GlitchCount = 2;
                     p.SpinRing = true;
                     break;
             }
@@ -726,11 +737,24 @@ namespace PhigrosLoading
 
             float circleRot = Mathf.Lerp(plan.CircleFromRot, 0f, circleEase);
 
-            // 故障抖动
+            // 故障：只在固定的几个瞬间触发，不循环
             plan.Glitch = Mathf.Clamp01(plan.Glitch * glitchMul);
-            float burstChance = 0.08f + 0.22f * plan.Glitch;
-            bool burst = t > plan.DigitStart && t < total - 0.7f
-                && Mathf.Repeat(t - plan.DigitStart, Mathf.Max(0.16f, 0.52f - 0.25f * plan.Glitch)) < burstChance;
+
+            int digitCount0 = Mathf.Min(2, _bossDigitsValue.Length);
+            float landTime = plan.DigitStart + Mathf.Max(0, digitCount0 - 1) * plan.DigitGap + plan.DigitDur;
+            int glitchTimes = Mathf.Clamp(Mathf.RoundToInt(plan.GlitchCount * Mathf.Clamp(glitchMul, 0f, 2f)), 0, 3);
+            float burstLength = 0.10f + 0.05f * plan.Glitch;
+
+            bool burst = false;
+            for (int gi = 0; gi < glitchTimes; gi++)
+            {
+                float bt = landTime + 0.02f + gi * (0.55f + 0.15f * plan.Glitch);
+                if (t >= bt && t < bt + burstLength)
+                {
+                    burst = true;
+                    break;
+                }
+            }
 
             Vector2 circlePos = new Vector2(0f, BossCircleY);
             if (burst) circlePos += new Vector2(UnityEngine.Random.Range(-8f, 8f) * plan.Glitch, UnityEngine.Random.Range(-4f, 4f) * plan.Glitch);

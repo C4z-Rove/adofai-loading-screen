@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.2
+- Glitch no longer loops: each tier fires a fixed number of bursts (0 for P1-9, 1-2 for most, 3 for
+  U15-16 / U20) at the digit-landing moment and shortly after. `BossGlitch = 0` disables them.
+
 ## 2.5.1
 - Boss animation is now tunable from the UMM panel: speed, circle size, digit size and glitch
   strength (`BossSpeed` / `BossScale` / `BossDigitScale` / `BossGlitch`). The minimum display
