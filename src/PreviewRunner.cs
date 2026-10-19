@@ -22,12 +22,14 @@ namespace PhigrosLoading
 
             LoadingInfo info = new LoadingInfo();
             info.Key = "Preview";
+            info.Mark = "P19";
             info.Title = "Adofai Loading Screen";
             info.Artist = "A Dance of Fire and Ice";
             info.Author = "Adofai Loading Screen";
             info.Difficulty = 7;
 
             info.PreparePreview();
+            info.Mark = "P19";
             PhigrosOverlay.Show(info);
 
             yield return new WaitForSecondsRealtime(7f);

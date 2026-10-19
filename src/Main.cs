@@ -45,8 +45,10 @@ namespace PhigrosLoading
                 modEntry.OnSaveGUI = OnSaveGUI;
                 modEntry.OnToggle = OnToggle;
                 Active = true;
+                // 让加载动画在窗口失焦/后台时也继续跑
+                Application.runInBackground = true;
 
-                Log.Log("Adofai Loading Screen v2.4.0 loaded. ModPath = " + ModPath);
+                Log.Log("Adofai Loading Screen v2.4.1 loaded. ModPath = " + ModPath);
                 return true;
             }
             catch (Exception e)

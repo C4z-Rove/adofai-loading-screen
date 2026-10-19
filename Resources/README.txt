@@ -16,6 +16,23 @@ Adofai Loading Screen  ——  冰与火之舞 (A Dance of Fire and Ice) Mod
 中央指示器（spinner / dots / custom）可调大小 AnimScale、垂直偏移 AnimOffsetY；
 custom 也可以放到顶栏：AnimSlot = bar。
 
+boss 动画（魔王曲风格）
+------------------------
+  UMM 里把动画样式切到 oss，进关卡时就是这段演出（总长约 4.6 秒）：
+
+    1. 黑屏淡入
+    2. 评级圆圈从中心放大到屏幕中央（只显示字母，数字已经抠掉）
+    3. 数字从屏幕下方飞进圆圈里：十位先起飞、个位后起飞，前快后缓
+    4. 中段夹带故障特效（圆圈抖动 + 数字红蓝分离残影）
+    5. 整体淡出，直接接谱面
+
+  数字是用文字框画的，不是图片，所以任何数字都能显示。
+  圆圈用的是 Marks\_split\<评级>_L.png（已去掉数字的版本），
+  由 tools\split_marks.py 从 Marks\ 的图标批量生成；
+  没有对应 _L 图时会退回整张图标（此时不显示飞入的数字）。
+
+  时长固定 4.6 秒（即使关卡加载更快也会等它演完）。
+
 自定义动画
 ----------
 目录：Mods\PhigrosLoading\Animations\<名字>\

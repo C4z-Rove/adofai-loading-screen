@@ -145,8 +145,18 @@ namespace PhigrosLoading
                 ? 0.45f
                 : (Main.Config != null ? Mathf.Max(0f, Main.Config.MinLoadingSeconds) : 1.2f);
 
+            // boss 动画是一段完整演出，至少要放完
+            bool bossStyle = !info.IsExit && Main.Config != null
+                && string.Equals(Main.Config.AnimStyle, LoadingAnim.StyleBoss, StringComparison.OrdinalIgnoreCase);
+            if (bossStyle) _minDuration = Mathf.Max(4.6f, _minDuration);
+
             // 退出关卡时不显示加载条/百分比，只留曲图和信息
-            if (_anim != null) _anim.SetVisible(!info.IsExit);
+            if (_anim != null)
+            {
+                _anim.SetMark(info.Mark);
+                _anim.Restart();
+                _anim.SetVisible(!info.IsExit);
+            }
             if (_percent != null)
             {
                 _percent.gameObject.SetActive(!info.IsExit && (Main.Config == null || Main.Config.ShowPercent));

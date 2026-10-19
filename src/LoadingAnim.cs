@@ -20,10 +20,11 @@ namespace PhigrosLoading
         public const string StyleSpinner = "spinner";
         public const string StyleDots = "dots";
         public const string StyleCustom = "custom";
+        public const string StyleBoss = "boss";
 
         public static readonly string[] Styles = new string[]
         {
-            StyleSweep, StylePulse, StyleWave, StyleFlow, StyleSpinner, StyleDots, StyleCustom
+            StyleSweep, StylePulse, StyleWave, StyleFlow, StyleSpinner, StyleDots, StyleCustom, StyleBoss
         };
 
         private static readonly Color AccentRed = new Color(1f, 0.22f, 0.29f, 1f);
@@ -43,6 +44,21 @@ namespace PhigrosLoading
         private Image _ring;
         private readonly List<Image> _dots = new List<Image>();
         private Image _custom;
+
+        // boss 动画
+        private RectTransform _bossRoot;
+        private CanvasGroup _bossGroup;
+        private Image _bossBlack;
+        private Image _bossLetter;
+        private Image _bossGlitchA;
+        private Image _bossGlitchB;
+        private readonly Text[] _bossDigits = new Text[2];
+        private Text _bossGlitchTextA;
+        private Text _bossGlitchTextB;
+        private string _bossMark;
+        private string _bossDigitsValue = "";
+        private Sprite _bossLetterSprite;
+        private float _bossTime;
 
         private string _style = StyleSweep;
         private float _time;
@@ -153,7 +169,147 @@ namespace PhigrosLoading
             _custom.preserveAspect = true;
             _custom.enabled = false;
 
+            BuildBoss(parent);
             ApplyLayout(cfg);
+        }
+
+        /// <summary>boss 动画：黑屏 → 字母 → 数字从下方升起 → 故障 → 淡出。</summary>
+        private void BuildBoss(RectTransform parent)
+        {
+            _bossRoot = UiKit.Rect("BossRoot", parent);
+            _bossRoot.anchorMin = Vector2.zero;
+            _bossRoot.anchorMax = Vector2.one;
+            _bossRoot.offsetMin = Vector2.zero;
+            _bossRoot.offsetMax = Vector2.zero;
+            _bossGroup = _bossRoot.gameObject.AddComponent<CanvasGroup>();
+            _bossGroup.alpha = 0f;
+            _bossGroup.blocksRaycasts = false;
+            _bossGroup.interactable = false;
+
+            RectTransform black = UiKit.Rect("Black", _bossRoot);
+            UiKit.Stretch(black);
+            _bossBlack = UiKit.Image(black, Color.black);
+
+            RectTransform glitchA = UiKit.Rect("GlitchA", _bossRoot);
+            glitchA.anchorMin = glitchA.anchorMax = new Vector2(0.5f, 0.5f);
+            glitchA.pivot = new Vector2(0.5f, 0.5f);
+            glitchA.sizeDelta = new Vector2(240f, 240f);
+            glitchA.anchoredPosition = new Vector2(0f, 170f);
+            _bossGlitchA = UiKit.Image(glitchA, new Color(1f, 0.2f, 0.3f, 0f));
+            _bossGlitchA.preserveAspect = true;
+
+            RectTransform glitchB = UiKit.Rect("GlitchB", _bossRoot);
+            glitchB.anchorMin = glitchB.anchorMax = new Vector2(0.5f, 0.5f);
+            glitchB.pivot = new Vector2(0.5f, 0.5f);
+            glitchB.sizeDelta = new Vector2(240f, 240f);
+            glitchB.anchoredPosition = new Vector2(0f, 170f);
+            _bossGlitchB = UiKit.Image(glitchB, new Color(0.2f, 0.7f, 1f, 0f));
+            _bossGlitchB.preserveAspect = true;
+
+            RectTransform letter = UiKit.Rect("Letter", _bossRoot);
+            letter.anchorMin = letter.anchorMax = new Vector2(0.5f, 0.5f);
+            letter.pivot = new Vector2(0.5f, 0.5f);
+            letter.sizeDelta = new Vector2(240f, 240f);
+            letter.anchoredPosition = new Vector2(0f, 170f);
+            _bossLetter = UiKit.Image(letter, Color.white);
+            _bossLetter.preserveAspect = true;
+
+            _bossGlitchTextA = MakeBossText("GlitchTextA", new Color(1f, 0.25f, 0.35f, 0f));
+            _bossGlitchTextB = MakeBossText("GlitchTextB", new Color(0.25f, 0.75f, 1f, 0f));
+
+            for (int i = 0; i < 2; i++)
+            {
+                _bossDigits[i] = MakeBossText("Digit" + i, Color.white);
+                _bossDigits[i].gameObject.SetActive(false);
+            }
+
+            _bossRoot.gameObject.SetActive(false);
+            _bossRoot.SetAsLastSibling();
+        }
+
+        private Text MakeBossText(string name, Color color)
+        {
+            RectTransform rt = UiKit.Rect(name, _bossRoot);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(300f, 340f);
+            rt.anchoredPosition = new Vector2(0f, -70f);
+
+            Text text = UiKit.Text(rt, "", 300, color, TextAnchor.MiddleCenter);
+            text.fontStyle = FontStyle.Bold;
+            if (color.a <= 0.01f) color.a = 0f;
+            text.raycastTarget = false;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.enabled = true;
+            UiKit.AddOutline(text, 2f);
+            return text;
+        }
+
+        private static string DigitsOf(string mark)
+        {
+            if (string.IsNullOrEmpty(mark)) return "";
+            int start = -1;
+            int end = -1;
+            for (int i = 0; i < mark.Length; i++)
+            {
+                if (char.IsDigit(mark[i]))
+                {
+                    if (start < 0) start = i;
+                    end = i;
+                }
+            }
+            if (start < 0) return "";
+            return mark.Substring(start, end - start + 1);
+        }
+
+        /// <summary>告诉 boss 动画用哪张评级图（例如 P19）。</summary>
+        public void SetMark(string mark)
+        {
+            if (string.IsNullOrEmpty(mark)) mark = RatingMarks.Unranked;
+            if (mark == _bossMark) return;
+            _bossMark = mark;
+
+            _bossLetterSprite = null;
+            _bossDigitsValue = "";
+
+            try
+            {
+                string dir = Path.Combine(Main.ModPath, "Marks", "_split");
+                string letter = Path.Combine(dir, mark + "_L.png");
+                if (File.Exists(letter))
+                {
+                    _bossLetterSprite = UiKit.LoadSpriteFromFile(letter);
+                    _bossDigitsValue = DigitsOf(mark);
+                }
+                if (_bossLetterSprite == null)
+                {
+                    // 没有拆分素材就退回整张图（数字已经画在图里，不再叠文字）
+                    _bossLetterSprite = RatingMarks.Icon(mark);
+                    _bossDigitsValue = "";
+                }
+            }
+            catch (Exception e)
+            {
+                Main.Error(e);
+            }
+
+            if (_bossLetter != null)
+            {
+                _bossLetter.sprite = _bossLetterSprite;
+                _bossLetter.enabled = _bossLetterSprite != null;
+            }
+            if (_bossGlitchA != null) _bossGlitchA.sprite = _bossLetterSprite;
+            if (_bossGlitchB != null) _bossGlitchB.sprite = _bossLetterSprite;
+
+            int count = _bossDigitsValue.Length;
+            for (int i = 0; i < 2; i++)
+            {
+                if (_bossDigits[i] == null) continue;
+                bool used = i < count;
+                _bossDigits[i].gameObject.SetActive(used);
+                if (used) _bossDigits[i].text = _bossDigitsValue[i].ToString();
+            }
         }
 
         public void ApplyLayout(Settings cfg)
@@ -182,10 +338,33 @@ namespace PhigrosLoading
             _style = next;
             _framesKey = null;
             _frameIndex = 0;
+            _bossTime = 0f;
+            if (_bossRoot != null) _bossRoot.gameObject.SetActive(false);
+        }
+
+        /// <summary>重新开始 boss 动画的计时（每次显示加载画面时调用）。</summary>
+        public void Restart()
+        {
+            _bossTime = 0f;
+            _time = 0f;
         }
 
         public void SetVisible(bool visible)
         {
+            if (_bossRoot != null)
+            {
+                bool show = visible && _style == StyleBoss;
+                _bossRoot.gameObject.SetActive(show);
+                if (show) _bossRoot.SetAsLastSibling();
+            }
+
+            if (_style == StyleBoss)
+            {
+                if (_track != null) _track.gameObject.SetActive(false);
+                if (_center != null) _center.gameObject.SetActive(false);
+                return;
+            }
+
             bool barStyle = _style == StyleSweep || _style == StylePulse || _style == StyleWave
                 || _style == StyleFlow || (_style == StyleCustom && UseBarSlot());
 
@@ -201,6 +380,15 @@ namespace PhigrosLoading
             _time += dt;
             float p = Mathf.Clamp01(progress);
 
+            if (_style == StyleBoss)
+            {
+                if (_bossRoot != null) _bossRoot.gameObject.SetActive(true);
+                if (_track != null) _track.gameObject.SetActive(false);
+                if (_center != null) _center.gameObject.SetActive(false);
+                TickBoss(dt);
+                return;
+            }
+
             if (_style == StyleCustom) EnsureFrames(cfg);
 
             bool barStyle = _style == StyleSweep || _style == StylePulse || _style == StyleWave
@@ -215,6 +403,135 @@ namespace PhigrosLoading
             else TickCenter(p, dt, cfg);
         }
 
+        // ------------------------------------------------------------------
+        // boss 动画
+        // ------------------------------------------------------------------
+        // ------------------------------------------------------------------
+        // boss 动画：黑屏 → 圆圈从中心放大 → 数字从下方飞进圆圈 → 故障 → 淡出
+        // ------------------------------------------------------------------
+        private const float BossCircleY = 40f;
+        private const float BossCircleSize = 420f;
+
+        private void TickBoss(float dt)
+        {
+            _bossTime += dt;
+            float t = _bossTime;
+            float H = _bossRoot != null ? _bossRoot.rect.height : 1080f;
+            if (H <= 1f) H = 1080f;
+
+            // 1) 黑屏淡入
+            if (_bossBlack != null)
+            {
+                Color c = Color.black;
+                c.a = Mathf.Clamp01(t / 0.22f);
+                _bossBlack.color = c;
+            }
+
+            // 2) 圆圈：放大 + 居中
+            float circleT = Mathf.Clamp01((t - 0.22f) / 0.55f);
+            float circleEase = 1f - Mathf.Pow(1f - circleT, 3f);
+            float circleScale = Mathf.Lerp(0.32f, 1f, circleEase);
+            if (t > 3.4f) circleScale *= 1f + 0.02f * Mathf.Clamp01((t - 3.4f) / 0.6f);
+
+            Vector2 circlePos = new Vector2(0f, BossCircleY);
+
+            // 故障抖动
+            bool burst = t > 2.0f && t < 3.6f && Mathf.Repeat(t - 2.0f, 0.5f) < 0.08f;
+            if (burst) circlePos += new Vector2(UnityEngine.Random.Range(-6f, 6f), UnityEngine.Random.Range(-3f, 3f));
+
+            if (_bossLetter != null)
+            {
+                _bossLetter.rectTransform.anchoredPosition = circlePos;
+                _bossLetter.rectTransform.sizeDelta = new Vector2(BossCircleSize, BossCircleSize);
+                _bossLetter.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
+                Color c = Color.white;
+                c.a = circleT;
+                _bossLetter.color = c;
+            }
+
+            // 圆圈边缘的彩色残影（故障）
+            if (_bossGlitchA != null && _bossGlitchB != null)
+            {
+                if (burst && _bossLetterSprite != null)
+                {
+                    float off = UnityEngine.Random.Range(8f, 20f);
+                    _bossGlitchA.enabled = true;
+                    _bossGlitchB.enabled = true;
+                    _bossGlitchA.rectTransform.anchoredPosition = circlePos + new Vector2(-off, 0f);
+                    _bossGlitchB.rectTransform.anchoredPosition = circlePos + new Vector2(off, 0f);
+                    _bossGlitchA.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
+                    _bossGlitchB.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
+                    _bossGlitchA.color = new Color(1f, 0.25f, 0.35f, 0.45f * circleT);
+                    _bossGlitchB.color = new Color(0.25f, 0.75f, 1f, 0.45f * circleT);
+                }
+                else
+                {
+                    _bossGlitchA.enabled = false;
+                    _bossGlitchB.enabled = false;
+                }
+            }
+
+            // 3) 数字：从下方飞进圆圈里
+            float fade = 1f;
+            if (t > 4.0f) fade = Mathf.Clamp01(1f - (t - 4.0f) / 0.55f);
+
+            int count = Mathf.Min(2, _bossDigitsValue.Length);
+            float finalFont = BossCircleSize * 0.40f;
+            float startFont = finalFont * 1.9f;
+            float gap = finalFont * 0.62f;
+            float targetY = BossCircleY - BossCircleSize * 0.13f;
+
+            for (int i = 0; i < count; i++)
+            {
+                Text digit = _bossDigits[i];
+                if (digit == null) continue;
+
+                float start = 0.80f + i * 0.26f;
+                float p = Mathf.Clamp01((t - start) / 0.95f);
+                float ease = 1f - Mathf.Pow(1f - p, 3f);
+
+                float y = Mathf.Lerp(-H * 0.62f, targetY, ease);
+                float x = (i - (count - 1) * 0.5f) * gap;
+                if (burst) x += UnityEngine.Random.Range(-5f, 5f);
+
+                float font = Mathf.Lerp(startFont, finalFont, ease);
+
+                digit.rectTransform.anchoredPosition = new Vector2(x, y);
+                digit.fontSize = Mathf.Max(8, Mathf.RoundToInt(font));
+
+                Color c = Color.white;
+                c.a = Mathf.Clamp01(p * 4f) * fade * (burst ? 0.75f : 1f);
+                digit.color = c;
+            }
+
+            // 数字的彩色残影
+            if (_bossGlitchTextA != null && _bossGlitchTextB != null)
+            {
+                if (burst && count > 0)
+                {
+                    _bossGlitchTextA.text = _bossDigitsValue;
+                    _bossGlitchTextB.text = _bossDigitsValue;
+                    _bossGlitchTextA.gameObject.SetActive(true);
+                    _bossGlitchTextB.gameObject.SetActive(true);
+
+                    float off = UnityEngine.Random.Range(4f, 10f);
+                    Vector2 basePos = new Vector2(count > 1 ? -gap * 0.5f : 0f, targetY);
+                    _bossGlitchTextA.rectTransform.anchoredPosition = basePos + new Vector2(-off, 0f);
+                    _bossGlitchTextB.rectTransform.anchoredPosition = basePos + new Vector2(off, 0f);
+                    _bossGlitchTextA.fontSize = Mathf.RoundToInt(finalFont);
+                    _bossGlitchTextB.fontSize = Mathf.RoundToInt(finalFont);
+                    _bossGlitchTextA.color = new Color(1f, 0.25f, 0.35f, 0.28f * fade);
+                    _bossGlitchTextB.color = new Color(0.25f, 0.75f, 1f, 0.28f * fade);
+                }
+                else
+                {
+                    _bossGlitchTextA.gameObject.SetActive(false);
+                    _bossGlitchTextB.gameObject.SetActive(false);
+                }
+            }
+
+            if (_bossGroup != null) _bossGroup.alpha = Mathf.Clamp01(t / 0.2f);
+        }
         private void TickBar(float p, Settings cfg)
         {
             float width = _track != null ? _track.rect.width : 0f;

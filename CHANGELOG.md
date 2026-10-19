@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.4.1
+- **boss animation**: black fade-in, difficulty circle zooms into the centre (letters only — digits are
+  stripped into `Marks\_split\<mark>_L.png` + `_d0/_d1` by `tools/split_marks.py`), then the digits
+  fly up into the circle (tens first, ease-out), with glitch/RGB-split bursts; total ~4.6 s.
+- `Application.runInBackground = true` so animations keep running while the window is unfocused.
+
 ## 2.4.0
 - **Loading animations**: 7 built-in styles — `sweep`, `pulse`, `wave`, `flow`, `spinner`,`ndots` and `custom` — switchable in the UMM panel.
 - **Custom animations**: drop PNG sequences or a sprite sheet into `Animations\<name>\` (optional`n`anim.json` with `fps` / `columns` / `frames`). Can be shown in the center or in the top bar.

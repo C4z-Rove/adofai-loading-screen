@@ -41,11 +41,11 @@
   "BarSweepWidth": 0.25,
   "PercentFont": 24.0,
   "RecordJudge": false,
-  "PreviewOnStart": false,
-  "AnimStyle": "sweep",
   "AnimFolder": "",
   "AnimSlot": "center",
   "AnimFps": 0,
   "AnimScale": 1,
-  "AnimOffsetY": 0
+  "AnimOffsetY": 0,
+  "PreviewOnStart": false,
+  "AnimStyle": "boss"
 }
