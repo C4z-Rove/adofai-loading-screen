@@ -2,7 +2,7 @@
   "Id": "PhigrosLoading",
   "DisplayName": "Adofai Loading Screen",
   "Author": "PhigrosLoading",
-  "Version": "2.5.2",
+  "Version": "2.6.0",
   "ManagerVersion": "0.22.14.0",
   "AssemblyName": "PhigrosLoading.dll",
   "EntryMethod": "PhigrosLoading.Main.Load"

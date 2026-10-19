@@ -48,7 +48,7 @@ namespace PhigrosLoading
                 // 让加载动画在窗口失焦/后台时也继续跑
                 Application.runInBackground = true;
 
-                Log.Log("Adofai Loading Screen v2.5.2 loaded. ModPath = " + ModPath);
+                Log.Log("Adofai Loading Screen v2.6.0 loaded. ModPath = " + ModPath);
                 return true;
             }
             catch (Exception e)
@@ -141,6 +141,14 @@ namespace PhigrosLoading
                 Config.ClsBadge = RowToggle(Lang.T("选关界面显示评级图标", "Show rating badge in level select"), Config.ClsBadge);
                 Config.SkipRatedPrompt = RowToggle(Lang.T("已评级时跳过评级窗", "Skip rating window when already rated"), Config.SkipRatedPrompt);
                 Config.ExitAnimation = RowToggle(Lang.T("退出关卡也用这段动画", "Play this animation when leaving"), Config.ExitAnimation);
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Lang.T("退出动画样式", "Exit animation"), GUILayout.Width(232f));
+                if (GUILayout.Button(Lang.T("自动", "Auto") + (Config.ExitStyle == "auto" ? " ●" : ""), GUILayout.Width(80f))) Config.ExitStyle = "auto";
+                if (GUILayout.Button(Lang.T("纯淡出", "Fade") + (Config.ExitStyle == "fade" ? " ●" : ""), GUILayout.Width(96f))) Config.ExitStyle = "fade";
+                if (GUILayout.Button(Lang.T("曲图过渡", "Cover") + (Config.ExitStyle == "overlay" ? " ●" : ""), GUILayout.Width(110f))) Config.ExitStyle = "overlay";
+                GUILayout.Label(Lang.T("自动 = boss 进关时用纯淡出", "Auto = fade when the boss intro is used"), GUILayout.Width(300f));
+                GUILayout.EndHorizontal();
                 Config.FixLanguage = RowToggle(Lang.T("修复语言被锁成中文", "Fix language locked to Chinese"), Config.FixLanguage);
                 Config.Dim = RowSlider(Lang.T("曲图压暗强度", "Cover dim"), Config.Dim, 0f, 1f, "0.00");
                 Config.MinLoadingSeconds = RowSlider(Lang.T("加载画面最短时长(秒)", "Min loading time (s)"), Config.MinLoadingSeconds, 0f, 5f, "0.00");

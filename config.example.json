@@ -52,5 +52,6 @@
   "BossSpeed": 1.0,
   "BossScale": 1.0,
   "BossGlitch": 1.0,
-  "BossDigitScale": 1.0
+  "BossDigitScale": 1.0,
+  "ExitStyle": "auto"
 }

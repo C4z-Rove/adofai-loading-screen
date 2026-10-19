@@ -48,6 +48,9 @@ namespace PhigrosLoading
         /// <summary>离开关卡时也播放这一段动画（替代原版黑屏）</summary>
         public bool ExitAnimation = true;
 
+        /// <summary>退出动画样式：auto（boss 进关→纯淡出）/ fade（总是纯淡出）/ overlay（总是曲图过渡）</summary>
+        public string ExitStyle = "auto";
+
         /// <summary>游戏进行中在右下角显示评级文字</summary>
         public bool InGameDifficulty = true;
 
@@ -174,6 +177,7 @@ namespace PhigrosLoading
             MinLoadingSeconds = d.MinLoadingSeconds;
             MaxLoadingSeconds = d.MaxLoadingSeconds;
             ExitAnimation = d.ExitAnimation;
+            ExitStyle = d.ExitStyle;
             InGameDifficulty = d.InGameDifficulty;
             AutoRatingSuggest = d.AutoRatingSuggest;
             AutoRatingDisplay = d.AutoRatingDisplay;

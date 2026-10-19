@@ -43,6 +43,7 @@ namespace PhigrosLoading
         private Text _artist;
         private Text _chart;
         private Image _difficulty;
+        private Image _exitBlack;
         private RectTransform _difficultyRect;
 
         private readonly List<Anim> _anims = new List<Anim>();
@@ -121,6 +122,31 @@ namespace PhigrosLoading
             gameObject.SetActive(false);
         }
 
+        /// <summary>退出时用纯淡出（黑幕淡入 → 新场景淡出）还是原来的曲图过渡。</summary>
+        private static bool UseFadeExit()
+        {
+            Settings cfg = Main.Config;
+            if (cfg == null) return false;
+
+            string mode = cfg.ExitStyle ?? "auto";
+            if (string.Equals(mode, "fade", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(mode, "overlay", StringComparison.OrdinalIgnoreCase)) return false;
+
+            // auto：进关用的是 boss 演出，就用纯淡出
+            return string.Equals(cfg.AnimStyle, LoadingAnim.StyleBoss, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void ApplyExitFade(bool on)
+        {
+            if (_exitBlack != null) _exitBlack.enabled = on;
+
+            bool show = !on;
+            if (_bgImage != null) _bgImage.enabled = show;
+            if (_bgRect != null) _bgRect.gameObject.SetActive(show);
+            if (_infoGroup != null) _infoGroup.gameObject.SetActive(show);
+            if (_difficultyRect != null) _difficultyRect.gameObject.SetActive(show);
+        }
+
         private void ShowInternal(LoadingInfo info)
         {
             if (!_built) return;
@@ -144,6 +170,11 @@ namespace PhigrosLoading
             _minDuration = info.IsExit
                 ? 0.45f
                 : (Main.Config != null ? Mathf.Max(0f, Main.Config.MinLoadingSeconds) : 1.2f);
+
+            // 退出动画：boss 进关时默认用纯淡出，其它情况保留原来的曲图过渡
+            bool exitFade = info.IsExit && UseFadeExit();
+            ApplyExitFade(exitFade);
+            if (exitFade) _minDuration = 0.18f;
 
             // 先按这张谱面设置好动画素材，才能算准演出时长
             if (_anim != null)
@@ -396,7 +427,13 @@ namespace PhigrosLoading
             topRect.offsetMax = Vector2.zero;
             UiKit.Image(topRect, Color.white, UiKit.MakeVerticalGradient(new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, 0.72f)));
 
-            // ---------- 动画指示器（样式可切换） ----------
+            // ---------- 退出用纯淡出黑幕 ----------
+        RectTransform exitRect = UiKit.Rect("ExitFade", transform);
+        UiKit.Stretch(exitRect);
+        _exitBlack = UiKit.Image(exitRect, Color.black);
+        _exitBlack.enabled = false;
+
+        // ---------- 动画指示器（样式可切换） ----------
         _anim = new LoadingAnim();
         _anim.Build((RectTransform)transform, Main.Config);
         // 百分比

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.0
+- **Exit fade**: when the boss intro is used, leaving a level is now a plain fade (0.18 s black in,
+  0.44 s out) instead of the cover transition. New `ExitStyle` = auto / fade / overlay, also
+  selectable in the UMM panel.
+
 ## 2.5.2
 - Glitch no longer loops: each tier fires a fixed number of bursts (0 for P1-9, 1-2 for most, 3 for
   U15-16 / U20) at the digit-landing moment and shortly after. `BossGlitch = 0` disables them.
