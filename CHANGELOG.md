@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.8.2
+- GG intro: the two digits now settle on the same baseline (the tens digit was sitting too high); only
+  their start times are staggered (tens at 0.42 s, ones at 0.60 s).
+- White flash now fires right after the digits land.
+
 ## 2.8.1
 - GG intro: `<Lv.>` starts closed and opens while the digits rise; digits are now 4x the base size
   (1000 px) and the brackets 0.25x (62 px) by default. Long values shrink automatically to fit 62% of

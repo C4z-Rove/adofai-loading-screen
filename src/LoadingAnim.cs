@@ -764,8 +764,6 @@ namespace PhigrosLoading
             if (_bossGlitchA != null) _bossGlitchA.enabled = false;
             if (_bossGlitchB != null) _bossGlitchB.enabled = false;
             if (_bossWave != null) _bossWave.enabled = false;
-            if (_bossDigits[1] != null && _bossDigits[1].gameObject.activeSelf) _bossDigits[1].gameObject.SetActive(false);
-
             float H = _bossRoot != null ? _bossRoot.rect.height : 1080f;
             float W = _bossRoot != null ? _bossRoot.rect.width : 1920f;
             if (H <= 1f) H = 1080f;
@@ -800,19 +798,63 @@ namespace PhigrosLoading
             float labelW = left.preferredWidth;
             float rightW = right.preferredWidth;
 
+            bool split = _bossGgValue.Length == 2;
+            Text tens = _bossDigits[0];
+            Text ones = _bossDigits[1];
+
+            if (tens == null) return;
+
+            // 字号：两位数字各自一个 Text
+            tens.fontSize = numberFont;
+            tens.text = split ? _bossGgValue[0].ToString() : _bossGgValue;
+            tens.gameObject.SetActive(true);
+
+            if (ones != null)
+            {
+                if (split)
+                {
+                    ones.fontSize = numberFont;
+                    ones.text = _bossGgValue[1].ToString();
+                    ones.gameObject.SetActive(true);
+                }
+                else
+                {
+                    ones.gameObject.SetActive(false);
+                }
+            }
+
+            float tensW = tens.preferredWidth;
+            float onesW = split && ones != null ? ones.preferredWidth : 0f;
+            float digitsW = tensW + (split ? onesW : 0f);
+
+            // 整排宽度：<Lv.  + 数字  + >
+            float closedGap = labelFont * 0.02f;
+            float openGap = labelFont * 0.30f;
+
             // 数字从下方升起（0.42 ~ 1.22），括号同步张开
             float rise = Mathf.Clamp01((t - 0.42f) / 0.80f);
             float riseEase = Ease(EaseKind.Cubic, rise);
-            float numY = Mathf.Lerp(-H * 0.34f, 0f, riseEase);
 
-            // 张开幅度跟标签字号走；闭合时几乎贴住数字
-            float closedGap = labelFont * 0.02f;
-            float openGap = labelFont * 0.30f;
+            // 个位比十位晚一点起飞
+            float riseOnes = split ? Mathf.Clamp01((t - 0.60f) / 0.80f) : 0f;
+            float riseOnesEase = Ease(EaseKind.Cubic, riseOnes);
+
             float gap = Mathf.Lerp(closedGap, openGap, riseEase);
 
-            float leftX = -(labelW + gap + numW + gap + rightW) * 0.5f + labelW * 0.5f;
-            float rightX = leftX + labelW * 0.5f + gap + numW + gap + rightW * 0.5f;
-            float numX = leftX + labelW * 0.5f + gap + numW * 0.5f;
+            float totalW = labelW + gap * 2f + digitsW + rightW;
+            float rowLeft = -totalW * 0.5f;
+
+            float labelX = rowLeft + labelW * 0.5f;
+            float tensX = rowLeft + labelW + gap + tensW * 0.5f;
+            float onesX = tensX + tensW * 0.5f + onesW * 0.5f;
+            float rightX = rowLeft + labelW + gap * 2f + digitsW + rightW * 0.5f;
+
+            // 整体上移一点，视觉居中
+            float centerLift = numberFont * 0.07f;
+
+            // 两位数字最终对齐到同一条水平线，只错开起飞时间
+            float tensY = Mathf.Lerp(-H * 0.34f, centerLift, riseEase);
+            float onesY = Mathf.Lerp(-H * 0.34f, centerLift, riseOnesEase);
 
             // 落地抖动
             float land = 1.22f;
@@ -822,33 +864,41 @@ namespace PhigrosLoading
             float jitterX = shake > 0f ? UnityEngine.Random.Range(-shake, shake) * 0.6f : 0f;
             float jitterY = shake > 0f ? UnityEngine.Random.Range(-shake, shake) * 0.5f : 0f;
 
-            // 标签基线对齐：小字号整体往下靠
-            float labelY = -(numberFont - labelFont) * 0.16f;
-
+            float labelY = centerLift - (numberFont - labelFont) * 0.16f;
             float groupT = Mathf.Clamp01((t - 0.18f) / 0.30f);
 
             left.gameObject.SetActive(true);
             right.gameObject.SetActive(true);
-            main.gameObject.SetActive(true);
 
-            left.rectTransform.anchoredPosition = new Vector2(leftX + jitterX, labelY + jitterY);
+            left.rectTransform.anchoredPosition = new Vector2(labelX + jitterX, labelY + jitterY);
             right.rectTransform.anchoredPosition = new Vector2(rightX + jitterX, labelY + jitterY);
-            main.rectTransform.anchoredPosition = new Vector2(numX + jitterX * 0.6f, numY + jitterY);
+
+            tens.rectTransform.anchoredPosition = new Vector2(tensX + jitterX * 0.6f, tensY + jitterY);
 
             Color labelColor = Color.white;
             labelColor.a = groupT * fade;
             left.color = labelColor;
             right.color = labelColor;
 
-            Color numberColor = Color.white;
-            numberColor.a = Mathf.Clamp01(rise * 2.6f) * fade;
-            main.color = numberColor;
+            Color tensColor = Color.white;
+            tensColor.a = Mathf.Clamp01(rise * 2.6f) * fade;
+            tens.color = tensColor;
+
+            if (split && ones != null)
+            {
+                ones.rectTransform.anchoredPosition = new Vector2(onesX + jitterX * 0.6f, onesY + jitterY);
+                Color onesColor = Color.white;
+                onesColor.a = Mathf.Clamp01(riseOnes * 2.6f) * fade;
+                ones.color = onesColor;
+            }
+
+            main = tens;
 
             // 白闪（数字落定）
             if (_bossFlash != null)
             {
                 float flash = 0f;
-                if (t > land - 0.02f && t < land + 0.15f) flash = 0.6f * Mathf.Clamp01(glitchMul);
+                if (t > land + 0.04f && t < land + 0.20f) flash = 0.65f * Mathf.Clamp01(glitchMul);
                 Color fc = _bossFlash.color;
                 fc.a = flash * fade;
                 _bossFlash.color = fc;
