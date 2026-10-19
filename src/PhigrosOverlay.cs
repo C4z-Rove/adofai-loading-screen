@@ -179,7 +179,13 @@ namespace PhigrosLoading
             // 先按这张谱面设置好动画素材，才能算准演出时长
             if (_anim != null)
             {
-                _anim.SetMark(info.Mark);
+                string ggText = info.GGText;
+                if (string.IsNullOrEmpty(ggText) && Main.Config != null
+                    && string.Equals(Main.Config.BossRatingSource, "gg", StringComparison.OrdinalIgnoreCase))
+                {
+                    ggText = AutoRatingBridge.GetCachedGG(info.LevelPath);
+                }
+                _anim.SetRating(info.Mark, ggText);
                 _anim.Restart();
                 _anim.SetVisible(!info.IsExit);
             }

@@ -174,6 +174,33 @@ namespace PhigrosLoading
             }
         }
 
+        /// <summary>取缓存里的 GG 评级（例如 "18" / "20.3" / "-21+"）。</summary>
+        public static string GetCachedGG(string levelPath)
+        {
+            if (string.IsNullOrEmpty(levelPath)) return null;
+
+            EnsureInit();
+            try
+            {
+                Entry entry;
+                if (!Cache.TryGetValue(levelPath, out entry) || entry == null) return null;
+                if (string.IsNullOrEmpty(entry.GG)) return null;
+
+                if (File.Exists(levelPath))
+                {
+                    long stamp = File.GetLastWriteTimeUtc(levelPath).Ticks;
+                    if (entry.Stamp != 0 && entry.Stamp != stamp) return null;
+                }
+
+                return entry.GG;
+            }
+            catch (Exception e)
+            {
+                Main.Error(e);
+                return null;
+            }
+        }
+
         /// <summary>取缓存里的自动评级（谱面没改动过才有效）。</summary>
         public static string GetCachedMark(string levelPath)
         {

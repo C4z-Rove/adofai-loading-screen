@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -22,7 +23,13 @@ namespace PhigrosLoading
 
             LoadingInfo info = new LoadingInfo();
             info.Key = "Preview";
-            info.Mark = (Main.Config != null && !string.IsNullOrEmpty(Main.Config.PreviewMark)) ? Main.Config.PreviewMark : "P19";
+            string previewMark = (Main.Config != null && !string.IsNullOrEmpty(Main.Config.PreviewMark)) ? Main.Config.PreviewMark : "P19";
+            if (previewMark.StartsWith("gg:"))
+            {
+                info.GGText = previewMark.Substring(3);
+                previewMark = "P19";
+            }
+            info.Mark = previewMark;
             info.Title = "Adofai Loading Screen";
             info.Artist = "A Dance of Fire and Ice";
             info.Author = "Adofai Loading Screen";

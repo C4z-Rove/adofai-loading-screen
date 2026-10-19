@@ -48,7 +48,7 @@ namespace PhigrosLoading
                 // 让加载动画在窗口失焦/后台时也继续跑
                 Application.runInBackground = true;
 
-                Log.Log("Adofai Loading Screen v2.6.0 loaded. ModPath = " + ModPath);
+                Log.Log("Adofai Loading Screen v2.7.0 loaded. ModPath = " + ModPath);
                 return true;
             }
             catch (Exception e)
@@ -287,6 +287,13 @@ namespace PhigrosLoading
                 Config.BossScale = RowSlider(Lang.T("圆圈大小", "Circle size"), Config.BossScale, 0.5f, 1.8f, "0.00");
                 Config.BossDigitScale = RowSlider(Lang.T("数字大小", "Digit size"), Config.BossDigitScale, 0.6f, 1.6f, "0.00");
                 Config.BossGlitch = RowSlider(Lang.T("故障强度(0=关)", "Glitch strength (0=off)"), Config.BossGlitch, 0f, 2f, "0.00");
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Lang.T("显示的评级", "Rating shown"), GUILayout.Width(232f));
+                if (GUILayout.Button("TUF" + (Config.BossRatingSource == "tuf" ? " ●" : ""), GUILayout.Width(90f))) Config.BossRatingSource = "tuf";
+                if (GUILayout.Button("GG (Lv.XX)" + (Config.BossRatingSource == "gg" ? " ●" : ""), GUILayout.Width(140f))) Config.BossRatingSource = "gg";
+                GUILayout.Label(Lang.T("GG 用纯文字，个位数补 0", "GG uses plain text with a leading zero"), GUILayout.Width(300f));
+                GUILayout.EndHorizontal();
                 GUILayout.Label(Lang.T("P1-9 简易 / P10-20 标准 / G1-9 侧飞 / G10-20 坠落 / U1-9 冲刺 / U10-14 汇聚 / U15-16 重故障 / U17-19 数字先行 / U20 大招 / UJ 螺旋",
                     "P1-9 simple / P10-20 classic / G1-9 side-in / G10-20 drop / U1-9 dash / U10-14 arcs / U15-16 heavy glitch / U17-19 digits first / U20 ultimate / UJ spiral"));
                 GUILayout.EndVertical();

@@ -30,6 +30,9 @@ namespace PhigrosLoading
         public bool CoverIsFallback;
         public Sprite DifficultySprite;
 
+        /// <summary>boss 演出要显示的 GG 评级（为空则用 TUF 图标）</summary>
+        public string GGText;
+
         /// <summary>这是「离开关卡」时的过渡动画，不是进关。</summary>
         public bool IsExit;
 

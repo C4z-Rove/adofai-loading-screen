@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.7.0
+- **TUF / GG switch** for the boss intro (`BossRatingSource`). GG renders a single row `《Lv.XX》`:`n  the number rises from below, the book-title marks spread open on impact (white flash + shake + two`n  glitch ghosts), single digits are zero-padded (`Lv.07`). GG falls back to TUF when AutoRating has`n  no cached value.
+
 ## 2.6.0
 - **Exit fade**: when the boss intro is used, leaving a level is now a plain fade (0.18 s black in,
   0.44 s out) instead of the cover transition. New `ExitStyle` = auto / fade / overlay, also

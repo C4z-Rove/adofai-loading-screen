@@ -56,6 +56,10 @@ namespace PhigrosLoading
         private Text _bossGlitchTextA;
         private Text _bossGlitchTextB;
         private string _bossMark;
+        private bool _bossGgMode;
+        private string _bossGgValue = "";
+        private Text _bossGgPrefix;
+        private Text _bossGgRight;
         private string _bossDigitsValue = "";
         private Sprite _bossLetterSprite;
         private float _bossTime;
@@ -219,6 +223,16 @@ namespace PhigrosLoading
             _bossLetter = UiKit.Image(letter, Color.white);
             _bossLetter.preserveAspect = true;
 
+            _bossGgPrefix = MakeBossText("GgPrefix", new Color(1f, 1f, 1f, 0.9f));
+            _bossGgPrefix.text = "《";
+            _bossGgPrefix.fontSize = 300;
+            _bossGgPrefix.gameObject.SetActive(false);
+
+            _bossGgRight = MakeBossText("GgRight", new Color(1f, 1f, 1f, 0.9f));
+            _bossGgRight.text = "》";
+            _bossGgRight.fontSize = 300;
+            _bossGgRight.gameObject.SetActive(false);
+
             _bossGlitchTextA = MakeBossText("GlitchTextA", new Color(1f, 0.25f, 0.35f, 0f));
             _bossGlitchTextB = MakeBossText("GlitchTextB", new Color(0.25f, 0.75f, 1f, 0f));
 
@@ -289,6 +303,38 @@ namespace PhigrosLoading
             }
             if (start < 0) return "";
             return mark.Substring(start, end - start + 1);
+        }
+
+        /// <summary>设置 boss 演出显示什么：GG 有值时用纯文字 Lv.XX，否则用 TUF 图标。</summary>
+        public void SetRating(string mark, string gg)
+        {
+            _bossGgMode = !string.IsNullOrEmpty(gg);
+            _bossGgValue = _bossGgMode ? FormatGG(gg) : "";
+            SetMark(mark);
+            ApplyRatingVisibility();
+        }
+
+        private static string FormatGG(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return "";
+            raw = raw.Trim();
+
+            int number;
+            if (int.TryParse(raw, out number) && number >= 0 && number < 100) return number.ToString("00");
+            return raw;   // 20.3 / -21+ 之类原样显示
+        }
+
+        private void ApplyRatingVisibility()
+        {
+            bool tuf = !_bossGgMode;
+
+            if (_bossLetter != null) _bossLetter.enabled = tuf;
+            if (_bossSpinRing != null) _bossSpinRing.enabled = false;
+            if (_bossGgPrefix != null) _bossGgPrefix.gameObject.SetActive(!tuf);
+            if (_bossGgRight != null) _bossGgRight.gameObject.SetActive(!tuf);
+
+            if (_bossDigits[0] != null) _bossDigits[0].gameObject.SetActive(true);
+            if (_bossDigits[1] != null) _bossDigits[1].gameObject.SetActive(!tuf && _bossDigitsValue.Length > 1);
         }
 
         /// <summary>告诉 boss 动画用哪张评级图（例如 P19）。</summary>
@@ -682,11 +728,156 @@ namespace PhigrosLoading
         public float BossDuration(Settings cfg)
         {
             float speed = cfg != null ? Mathf.Clamp(cfg.BossSpeed, 0.4f, 2f) : 1f;
-            return PlanOf(_bossKind).Duration / speed;
+            float duration = _bossGgMode ? 4.2f : PlanOf(_bossKind).Duration;
+            return duration / speed;
+        }
+
+        // ------------------------------------------------------------------
+        // boss · GG：一排 「《 Lv.XX 》」——数字从下方升起，书名号落地时向外张开
+        // ------------------------------------------------------------------
+        private void TickBossGG(float dt)
+        {
+            _bossTime += dt;
+
+            Settings cfg = Main.Config;
+            float speed = cfg != null ? Mathf.Clamp(cfg.BossSpeed, 0.4f, 2f) : 1f;
+            float sizeMul = cfg != null ? Mathf.Clamp(cfg.BossScale, 0.5f, 1.8f) : 1f;
+            float glitchMul = cfg != null ? Mathf.Clamp(cfg.BossGlitch, 0f, 2f) : 1f;
+
+            float t = _bossTime * speed;
+            const float total = 4.2f;
+            float fadeOutStart = total - 0.6f;
+            float fade = t > fadeOutStart ? Mathf.Clamp01(1f - (t - fadeOutStart) / 0.6f) : 1f;
+
+            if (_bossBlack != null)
+            {
+                Color c = Color.black;
+                c.a = Mathf.Clamp01(t / 0.2f);
+                _bossBlack.color = c;
+            }
+
+            if (_bossLetter != null && _bossLetter.enabled) _bossLetter.enabled = false;
+            if (_bossSpinRing != null && _bossSpinRing.enabled) _bossSpinRing.enabled = false;
+            if (_bossGlitchA != null) _bossGlitchA.enabled = false;
+            if (_bossGlitchB != null) _bossGlitchB.enabled = false;
+            if (_bossWave != null) _bossWave.enabled = false;
+            if (_bossDigits[1] != null && _bossDigits[1].gameObject.activeSelf) _bossDigits[1].gameObject.SetActive(false);
+
+            float H = _bossRoot != null ? _bossRoot.rect.height : 1080f;
+            if (H <= 1f) H = 1080f;
+
+            // 冲击抖动（落地后 0.35 秒内）
+            float land = 1.05f;
+            float shake = 0f;
+            if (t > land && t < land + 0.35f) shake = (1f - (t - land) / 0.35f) * 16f * glitchMul;
+
+            // 主文字：Lv.XX，从下方升起
+            Text main = _bossDigits[0];
+            float fontSize = Mathf.Max(24f, 300f * sizeMul);
+            float rise = Ease(EaseKind.Cubic, Mathf.Clamp01((t - 0.30f) / 0.78f));
+
+            if (main != null)
+            {
+                main.gameObject.SetActive(true);
+                main.text = "Lv." + _bossGgValue;
+                main.fontSize = Mathf.RoundToInt(fontSize);
+
+                float y = Mathf.Lerp(-H * 0.34f, 0f, rise);
+                if (shake > 0f) y += UnityEngine.Random.Range(-shake, shake) * 0.5f;
+                main.rectTransform.anchoredPosition = new Vector2(UnityEngine.Random.Range(-shake, shake) * 0.6f, y);
+
+                Color c = Color.white;
+                c.a = Mathf.Clamp01(rise * 2.5f) * fade;
+                main.color = c;
+            }
+
+            // 书名号：先贴近文字，落地后向外张开
+            if (_bossGgPrefix != null && _bossGgRight != null && main != null)
+            {
+                float appear = Mathf.Clamp01((t - 0.52f) / 0.30f);
+                float open = Ease(EaseKind.Back, Mathf.Clamp01((t - land) / 0.42f));
+
+                float bracketSize = fontSize * 1.12f;
+                _bossGgPrefix.fontSize = Mathf.RoundToInt(bracketSize);
+                _bossGgRight.fontSize = Mathf.RoundToInt(bracketSize);
+
+                float halfWidth = main.preferredWidth * 0.5f;
+                float gap = Mathf.Lerp(-fontSize * 0.10f, fontSize * 0.16f, open);
+
+                float leftX = -halfWidth - gap - bracketSize * 0.16f;
+                float rightX = halfWidth + gap + bracketSize * 0.16f;
+
+                if (shake > 0f)
+                {
+                    leftX -= UnityEngine.Random.Range(0f, shake) * 0.5f;
+                    rightX += UnityEngine.Random.Range(0f, shake) * 0.5f;
+                }
+
+                _bossGgPrefix.gameObject.SetActive(true);
+                _bossGgRight.gameObject.SetActive(true);
+
+                _bossGgPrefix.rectTransform.anchoredPosition = new Vector2(leftX, 0f);
+                _bossGgRight.rectTransform.anchoredPosition = new Vector2(rightX, 0f);
+
+                Color lc = Color.white;
+                lc.a = appear * fade;
+                _bossGgPrefix.color = lc;
+                _bossGgRight.color = lc;
+            }
+
+            // 白闪（正文落地瞬间）
+            if (_bossFlash != null)
+            {
+                float flash = 0f;
+                if (t > land - 0.02f && t < land + 0.16f) flash = 0.65f * Mathf.Clamp01(glitchMul);
+                Color fc = _bossFlash.color;
+                fc.a = flash * fade;
+                _bossFlash.color = fc;
+            }
+
+            // 故障：只在落定后两次，不循环
+            bool burst = false;
+            int times = Mathf.Clamp(Mathf.RoundToInt(2 * glitchMul), 0, 2);
+            float[] moments = new float[] { land + 0.45f, land + 1.55f };
+            for (int i = 0; i < times; i++)
+            {
+                if (t >= moments[i] && t < moments[i] + 0.11f) { burst = true; break; }
+            }
+
+            if (main != null && _bossGlitchTextA != null && _bossGlitchTextB != null)
+            {
+                if (burst)
+                {
+                    float off = UnityEngine.Random.Range(8f, 18f);
+                    _bossGlitchTextA.text = main.text;
+                    _bossGlitchTextB.text = main.text;
+                    _bossGlitchTextA.gameObject.SetActive(true);
+                    _bossGlitchTextB.gameObject.SetActive(true);
+                    _bossGlitchTextA.fontSize = main.fontSize;
+                    _bossGlitchTextB.fontSize = main.fontSize;
+                    _bossGlitchTextA.rectTransform.anchoredPosition = main.rectTransform.anchoredPosition + new Vector2(-off, 0f);
+                    _bossGlitchTextB.rectTransform.anchoredPosition = main.rectTransform.anchoredPosition + new Vector2(off, 0f);
+                    _bossGlitchTextA.color = new Color(1f, 0.25f, 0.35f, 0.30f * fade);
+                    _bossGlitchTextB.color = new Color(0.25f, 0.75f, 1f, 0.30f * fade);
+                }
+                else
+                {
+                    _bossGlitchTextA.gameObject.SetActive(false);
+                    _bossGlitchTextB.gameObject.SetActive(false);
+                }
+            }
+
+            if (_bossGroup != null) _bossGroup.alpha = Mathf.Clamp01(t / 0.2f);
         }
 
         private void TickBoss(float dt)
         {
+            if (_bossGgMode)
+            {
+                TickBossGG(dt);
+                return;
+            }
+
             _bossTime += dt;
 
             Settings cfg = Main.Config;

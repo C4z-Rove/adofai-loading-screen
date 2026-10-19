@@ -154,6 +154,9 @@ namespace PhigrosLoading
         /// <summary>boss 数字大小倍率</summary>
         public float BossDigitScale = 1f;
 
+        /// <summary>boss 演出显示哪种评级：tuf（P/G/U 图标）或 gg（Lv.XX 纯文字）</summary>
+        public string BossRatingSource = "tuf";
+
         /// <summary>色块扫过一次的时长（秒）</summary>
         public float BarSweepSeconds = 1.1f;
 
@@ -217,6 +220,7 @@ namespace PhigrosLoading
             BossScale = d.BossScale;
             BossGlitch = d.BossGlitch;
             BossDigitScale = d.BossDigitScale;
+            BossRatingSource = d.BossRatingSource;
             BarSweepSeconds = d.BarSweepSeconds;
             BarSweepWidth = d.BarSweepWidth;
             PercentFont = d.PercentFont;
