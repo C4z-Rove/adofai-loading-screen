@@ -57,6 +57,12 @@ boss 动画（魔王曲风格 · 2.5.0 起按评级分 10 种）
          小数/负号之类（20.3、-21+）原样显示。
          GG 数值取自 AutoRating 的缓存；没有缓存时自动退回 TUF。
 
+         GG 字号可单独调（UMM 面板，仅 GG 模式显示）：
+           GG 数字大小 BossGgNumberSize（默认 2.0，基准 250px）
+           GG 括号大小 BossGgLabelSize（默认 0.5）
+         两者按基线大致对齐，数字落了会白闪 + 抖动。
+
+
   演出参数可在 UMM 面板「boss 演出」里调：
     演出速度 BossSpeed（0.4~2.0，越快总时长越短）
     圆圈大小 BossScale（0.5~1.8，基准 420px）

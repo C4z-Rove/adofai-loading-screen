@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.8.0
+- GG intro sizing: the number is now 2x bigger (500 px) and `<Lv.>` half size (125 px) by default, with both
+  adjustable (`BossGgNumberSize` / `BossGgLabelSize`, sliders in the UMM panel under GG mode).
+  Label and digits are roughly baseline-aligned.
+
 ## 2.7.1
 - GG intro uses ASCII brackets: one row `<Lv.XX>` — `<Lv.` and `>` appear as one group, the digits rise on
   their own and the brackets spread apart on impact.

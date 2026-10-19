@@ -54,5 +54,7 @@
   "BossGlitch": 1.0,
   "BossDigitScale": 1.0,
   "ExitStyle": "auto",
-  "BossRatingSource": "tuf"
+  "BossRatingSource": "tuf",
+  "BossGgNumberSize": 2.0,
+  "BossGgLabelSize": 0.5
 }

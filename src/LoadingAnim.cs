@@ -771,8 +771,16 @@ namespace PhigrosLoading
             float shake = 0f;
             if (t > land && t < land + 0.35f) shake = (1f - (t - land) / 0.35f) * 16f * glitchMul;
 
-            float fontSize = Mathf.Max(24f, 250f * sizeMul);
+            float numScale = cfg != null ? Mathf.Clamp(cfg.BossGgNumberSize, 0.3f, 4f) : 2f;
+            float labelScale = cfg != null ? Mathf.Clamp(cfg.BossGgLabelSize, 0.2f, 4f) : 0.5f;
+
+            float fontSize = Mathf.Max(24f, 250f * sizeMul * numScale);   // 数字
+            float labelSize = Mathf.Max(16f, 250f * sizeMul * labelScale); // <Lv. 与 >
             int fs = Mathf.RoundToInt(fontSize);
+            int lfs = Mathf.RoundToInt(labelSize);
+
+            // 让两种字号大致基线对齐
+            float labelYOffset = -(fontSize - labelSize) * 0.16f;
 
             Text left = _bossGgPrefix;
             Text right = _bossGgRight;
@@ -780,9 +788,8 @@ namespace PhigrosLoading
 
             if (left == null || right == null || main == null) return;
 
-            // 统一的字体大小
-            left.fontSize = fs;
-            right.fontSize = fs;
+            left.fontSize = lfs;
+            right.fontSize = lfs;
             main.fontSize = fs;
 
             main.text = _bossGgValue;
@@ -795,7 +802,7 @@ namespace PhigrosLoading
 
             // 括号张开：从"贴着数字"到"留出空隙"
             float open = Ease(EaseKind.Back, Mathf.Clamp01((t - land) / 0.42f));
-            float gap = Mathf.Lerp(fontSize * 0.02f, fontSize * 0.12f, open);
+            float gap = Mathf.Lerp(labelSize * 0.04f, labelSize * 0.22f, open);
 
             float totalW = leftW + gap * 2f + numW + rightW;
             float startX = -totalW * 0.5f;
@@ -816,8 +823,8 @@ namespace PhigrosLoading
             right.gameObject.SetActive(true);
             main.gameObject.SetActive(true);
 
-            left.rectTransform.anchoredPosition = new Vector2(startX + leftW * 0.5f + jitterX, groupY + jitterY);
-            right.rectTransform.anchoredPosition = new Vector2(startX + leftW + gap * 2f + numW + rightW * 0.5f + jitterX, groupY + jitterY);
+            left.rectTransform.anchoredPosition = new Vector2(startX + leftW * 0.5f + jitterX, groupY + labelYOffset + jitterY);
+            right.rectTransform.anchoredPosition = new Vector2(startX + leftW + gap * 2f + numW + rightW * 0.5f + jitterX, groupY + labelYOffset + jitterY);
             main.rectTransform.anchoredPosition = new Vector2(startX + leftW + gap + numW * 0.5f + jitterX * 0.6f, numY + jitterY);
 
             Color groupColor = Color.white;
