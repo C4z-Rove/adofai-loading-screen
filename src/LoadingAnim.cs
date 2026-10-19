@@ -333,7 +333,10 @@ namespace PhigrosLoading
             if (_bossGgPrefix != null) _bossGgPrefix.gameObject.SetActive(!tuf);
             if (_bossGgRight != null) _bossGgRight.gameObject.SetActive(!tuf);
 
+            if (_bossLetter != null) _bossLetter.enabled = true;
             if (_bossDigits[0] != null) _bossDigits[0].gameObject.SetActive(true);
+            if (_bossGgPrefix != null) _bossGgPrefix.gameObject.SetActive(!tuf);
+            if (_bossGgRight != null) _bossGgRight.gameObject.SetActive(!tuf);
             if (_bossDigits[1] != null) _bossDigits[1].gameObject.SetActive(!tuf && _bossDigitsValue.Length > 1);
         }
 
@@ -736,6 +739,39 @@ namespace PhigrosLoading
         // boss · GG：一排 <Lv.XX>
         //   一开始 <Lv.> 是合在一起的，数字从下方升起的同时括号张开
         // ------------------------------------------------------------------
+        /// <summary>把 boss 演出的所有元素收起来（只保留黑底）。</summary>
+        private void HideBossContent()
+        {
+            if (_bossBlack != null)
+            {
+                Color c = Color.black;
+                c.a = 1f;
+                _bossBlack.color = c;
+            }
+
+            if (_bossLetter != null) _bossLetter.enabled = false;
+            if (_bossGlitchA != null) _bossGlitchA.enabled = false;
+            if (_bossGlitchB != null) _bossGlitchB.enabled = false;
+            if (_bossWave != null) _bossWave.enabled = false;
+            if (_bossSpinRing != null) _bossSpinRing.enabled = false;
+
+            for (int i = 0; i < 2; i++)
+            {
+                if (_bossDigits[i] != null && _bossDigits[i].gameObject.activeSelf) _bossDigits[i].gameObject.SetActive(false);
+            }
+            if (_bossGgPrefix != null && _bossGgPrefix.gameObject.activeSelf) _bossGgPrefix.gameObject.SetActive(false);
+            if (_bossGgRight != null && _bossGgRight.gameObject.activeSelf) _bossGgRight.gameObject.SetActive(false);
+            if (_bossGlitchTextA != null && _bossGlitchTextA.gameObject.activeSelf) _bossGlitchTextA.gameObject.SetActive(false);
+            if (_bossGlitchTextB != null && _bossGlitchTextB.gameObject.activeSelf) _bossGlitchTextB.gameObject.SetActive(false);
+
+            if (_bossFlash != null)
+            {
+                Color fc = _bossFlash.color;
+                fc.a = 0f;
+                _bossFlash.color = fc;
+            }
+        }
+
         private void TickBossGG(float dt)
         {
             _bossTime += dt;
@@ -749,6 +785,13 @@ namespace PhigrosLoading
 
             float t = _bossTime * speed;
             const float total = 4.2f;
+
+            if (t >= total + 0.02f)
+            {
+                HideBossContent();
+                return;
+            }
+
             float fadeOutStart = total - 0.6f;
             float fade = t > fadeOutStart ? Mathf.Clamp01(1f - (t - fadeOutStart) / 0.6f) : 1f;
 
@@ -964,6 +1007,14 @@ namespace PhigrosLoading
 
             BossPlan plan = PlanOf(_bossKind);
             float total = plan.Duration;
+
+            // 演出结束：把内容全部收掉，只留黑底（避免淡出后残留）
+            if (t >= total + 0.02f)
+            {
+                HideBossContent();
+                return;
+            }
+
             float fadeOutStart = total - 0.55f;
             float fade = t > fadeOutStart ? Mathf.Clamp01(1f - (t - fadeOutStart) / 0.55f) : 1f;
 
@@ -1081,10 +1132,17 @@ namespace PhigrosLoading
             float gap = finalFont * 0.62f;
             float targetY = BossCircleY - circleSize * 0.13f;
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < 2; i++)
             {
                 Text digit = _bossDigits[i];
                 if (digit == null) continue;
+
+                if (i >= count)
+                {
+                    if (digit.gameObject.activeSelf) digit.gameObject.SetActive(false);
+                    continue;
+                }
+                if (!digit.gameObject.activeSelf) digit.gameObject.SetActive(true);
 
                 float start = plan.DigitStart + i * plan.DigitGap;
                 float p = Mathf.Clamp01((t - start) / Mathf.Max(0.05f, plan.DigitDur));

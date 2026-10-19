@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.8.3
+- TUF intro no longer leaves anything on screen after the fade: once the tier's timeline ends, all boss
+  elements are hidden and only the black backdrop remains until the overlay closes.
+- Single-digit ratings are explicitly re-enabled each frame (the second digit text is cleared), so one-digit
+  charts always show their digit.
+
 ## 2.8.2
 - GG intro: the two digits now settle on the same baseline (the tens digit was sitting too high); only
   their start times are staggered (tens at 0.42 s, ones at 0.60 s).
