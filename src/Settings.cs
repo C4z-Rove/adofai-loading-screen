@@ -118,6 +118,24 @@ namespace PhigrosLoading
         /// <summary>Phigros 同款加载条：红/蓝色块交替从左扫到右</summary>
         public bool BarSweep = true;
 
+        /// <summary>动画样式：sweep / pulse / wave / flow / spinner / dots / custom</summary>
+        public string AnimStyle = "sweep";
+
+        /// <summary>自定义动画文件夹名（Animations\ 下），空=用第一个</summary>
+        public string AnimFolder = "";
+
+        /// <summary>自定义动画放在哪：center / bar</summary>
+        public string AnimSlot = "center";
+
+        /// <summary>自定义动画帧率（0=用 anim.json 里的值）</summary>
+        public float AnimFps = 0f;
+
+        /// <summary>中央指示器缩放</summary>
+        public float AnimScale = 1f;
+
+        /// <summary>中央指示器垂直偏移</summary>
+        public float AnimOffsetY = 0f;
+
         /// <summary>色块扫过一次的时长（秒）</summary>
         public float BarSweepSeconds = 1.1f;
 
@@ -170,6 +188,12 @@ namespace PhigrosLoading
             DiffBottom = d.DiffBottom;
             BarThickness = d.BarThickness;
             BarSweep = d.BarSweep;
+            AnimStyle = d.AnimStyle;
+            AnimFolder = d.AnimFolder;
+            AnimSlot = d.AnimSlot;
+            AnimFps = d.AnimFps;
+            AnimScale = d.AnimScale;
+            AnimOffsetY = d.AnimOffsetY;
             BarSweepSeconds = d.BarSweepSeconds;
             BarSweepWidth = d.BarSweepWidth;
             PercentFont = d.PercentFont;

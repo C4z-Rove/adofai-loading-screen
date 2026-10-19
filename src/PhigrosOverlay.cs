@@ -30,14 +30,13 @@ namespace PhigrosLoading
 
         private RectTransform _bgRect;
         private RectTransform _infoGroup;
-        private RectTransform _barTrackRect;
+        private LoadingAnim _anim;
         private Anim _difficultyAnim;
         private Image _bgImage;
         private bool _stretchCover;
         private Sprite _fallbackCover;
 
-        private Image _barFill;
-        private Image _barHead;
+
         private Text _percent;
 
         private Text _title;
@@ -147,7 +146,7 @@ namespace PhigrosLoading
                 : (Main.Config != null ? Mathf.Max(0f, Main.Config.MinLoadingSeconds) : 1.2f);
 
             // 退出关卡时不显示加载条/百分比，只留曲图和信息
-            if (_barTrackRect != null) _barTrackRect.gameObject.SetActive(!info.IsExit);
+            if (_anim != null) _anim.SetVisible(!info.IsExit);
             if (_percent != null)
             {
                 _percent.gameObject.SetActive(!info.IsExit && (Main.Config == null || Main.Config.ShowPercent));
@@ -271,7 +270,7 @@ namespace PhigrosLoading
             }
 
             _group.alpha = alpha;
-            ApplySweep();
+            if (_anim != null) _anim.Tick(_progress, dt, Main.Config);
             ApplyBar(_progress);
             ApplyAnims();
 
@@ -316,60 +315,6 @@ namespace PhigrosLoading
             }
         }
 
-        private static readonly Color SweepRed = new Color(1f, 0.22f, 0.29f, 1f);
-        private static readonly Color SweepBlue = new Color(0.25f, 0.52f, 1f, 1f);
-
-        /// <summary>
-        /// Phigros 同款加载条：一个色块从左扫到右，到右边缘后，另一个颜色再从左边开始，红蓝交替循环。
-        /// </summary>
-        private void ApplySweep()
-        {
-            if (_barFill == null || _barTrackRect == null) return;
-
-            Settings cfg = Main.Config;
-            RectTransform fill = _barFill.rectTransform;
-
-            if (cfg != null && !cfg.BarSweep)
-            {
-                // 关掉就退回普通白色进度条
-                fill.anchorMin = new Vector2(0f, 0f);
-                fill.anchorMax = new Vector2(Mathf.Clamp01(_progress), 1f);
-                fill.offsetMin = Vector2.zero;
-                fill.offsetMax = Vector2.zero;
-                _barFill.color = Color.white;
-                if (_barHead != null) _barHead.color = new Color(1f, 1f, 1f, 0.85f);
-                return;
-            }
-
-            float trackWidth = _barTrackRect.rect.width;
-            if (trackWidth <= 1f) return;
-
-            float widthRatio = cfg != null ? Mathf.Clamp(cfg.BarSweepWidth, 0.05f, 1f) : 0.25f;
-            float seconds = cfg != null ? Mathf.Clamp(cfg.BarSweepSeconds, 0.2f, 10f) : 1.1f;
-
-            float segment = trackWidth * widthRatio;
-            float cycle = Time.unscaledTime / seconds;
-            int index = Mathf.FloorToInt(cycle);
-            float t = cycle - index;
-
-            float x = Mathf.Lerp(-segment, trackWidth, t);
-
-            fill.anchorMin = new Vector2(0f, 0f);
-            fill.anchorMax = new Vector2(0f, 1f);
-            fill.pivot = new Vector2(0f, 0.5f);
-            fill.sizeDelta = new Vector2(segment, 0f);
-            fill.anchoredPosition = new Vector2(x, 0f);
-
-            Color color = (index % 2 == 0) ? SweepRed : SweepBlue;
-            _barFill.color = color;
-
-            if (_barHead != null)
-            {
-                Color head = color;
-                head.a = 0.9f;
-                _barHead.color = head;
-            }
-        }
         private void ApplyBar(float p)
         {
             p = Mathf.Clamp01(p);
@@ -441,32 +386,10 @@ namespace PhigrosLoading
             topRect.offsetMax = Vector2.zero;
             UiKit.Image(topRect, Color.white, UiKit.MakeVerticalGradient(new Color(0f, 0f, 0f, 0f), new Color(0f, 0f, 0f, 0.72f)));
 
-            // ---------- 顶部加载条 ----------
-            RectTransform barTrackRect = UiKit.Rect("BarTrack", transform);
-            _barTrackRect = barTrackRect;
-            barTrackRect.anchorMin = new Vector2(0f, 1f);
-            barTrackRect.anchorMax = new Vector2(1f, 1f);
-            barTrackRect.pivot = new Vector2(0.5f, 1f);
-            barTrackRect.offsetMin = new Vector2(0f, -11f);
-            barTrackRect.offsetMax = Vector2.zero;
-            Image barTrack = UiKit.Image(barTrackRect, new Color(1f, 1f, 1f, 0.18f));
-
-            RectTransform barFillRect = UiKit.Rect("BarFill", barTrackRect);
-            barFillRect.anchorMin = new Vector2(0f, 0f);
-            barFillRect.anchorMax = new Vector2(0.06f, 1f);
-            barFillRect.offsetMin = Vector2.zero;
-            barFillRect.offsetMax = Vector2.zero;
-            _barFill = UiKit.Image(barFillRect, Color.white);
-
-            RectTransform headRect = UiKit.Rect("BarHead", barFillRect);
-            headRect.anchorMin = new Vector2(1f, 0.5f);
-            headRect.anchorMax = new Vector2(1f, 0.5f);
-            headRect.pivot = new Vector2(0.5f, 0.5f);
-            headRect.anchoredPosition = Vector2.zero;
-            headRect.sizeDelta = new Vector2(46f, 46f);
-            _barHead = UiKit.Image(headRect, new Color(1f, 1f, 1f, 0.85f), UiKit.MakeGlow(64, 2.6f));
-
-            // 百分比
+            // ---------- 动画指示器（样式可切换） ----------
+        _anim = new LoadingAnim();
+        _anim.Build((RectTransform)transform, Main.Config);
+        // 百分比
             RectTransform percentRect = UiKit.Rect("Percent", transform);
             percentRect.anchorMin = new Vector2(1f, 1f);
             percentRect.anchorMax = new Vector2(1f, 1f);
@@ -559,7 +482,7 @@ namespace PhigrosLoading
             if (_artist != null) _artist.fontSize = Mathf.Max(6, Mathf.RoundToInt(cfg.LoadArtistFont));
             if (_chart != null) _chart.fontSize = Mathf.Max(6, Mathf.RoundToInt(cfg.LoadChartFont));
             if (_percent != null) _percent.fontSize = Mathf.Max(6, Mathf.RoundToInt(cfg.PercentFont));
-            if (_barTrackRect != null) _barTrackRect.offsetMin = new Vector2(0f, -Mathf.Max(1f, cfg.BarThickness));
+            if (_anim != null) _anim.ApplyLayout(cfg);
 
             Vector2 diffPos = new Vector2(-cfg.DiffRight, cfg.DiffBottom);
             if (_difficultyRect != null) _difficultyRect.anchoredPosition = diffPos;

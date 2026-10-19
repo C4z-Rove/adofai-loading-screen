@@ -3,7 +3,6 @@
   "Dim": 0.42,
   "ShowPercent": true,
   "KenBurns": true,
-  "PreviewOnStart": false,
   "RatingPrompt": true,
   "SkipRatedPrompt": true,
   "Hotkey": "F7",
@@ -41,5 +40,12 @@
   "BarSweepSeconds": 1.1,
   "BarSweepWidth": 0.25,
   "PercentFont": 24.0,
-  "RecordJudge": true
+  "RecordJudge": false,
+  "PreviewOnStart": false,
+  "AnimStyle": "sweep",
+  "AnimFolder": "",
+  "AnimSlot": "center",
+  "AnimFps": 0,
+  "AnimScale": 1,
+  "AnimOffsetY": 0
 }

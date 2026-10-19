@@ -46,7 +46,7 @@ namespace PhigrosLoading
                 modEntry.OnToggle = OnToggle;
                 Active = true;
 
-                Log.Log("Adofai Loading Screen v2.3.3 loaded. ModPath = " + ModPath);
+                Log.Log("Adofai Loading Screen v2.4.0 loaded. ModPath = " + ModPath);
                 return true;
             }
             catch (Exception e)
@@ -226,6 +226,51 @@ namespace PhigrosLoading
                 Config.PercentFont = RowSlider(Lang.T("百分比字号", "Percentage size"), Config.PercentFont, 8f, 120f, "0");
                 GUILayout.EndVertical();
 
+                GUILayout.BeginVertical("box");
+                GUILayout.Label("<b>" + Lang.T("加载画面 · 动画样式", "Loading screen · animation") + "</b>");
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Space(4f);
+                for (int i = 0; i < LoadingAnim.Styles.Length; i++)
+                {
+                    string style = LoadingAnim.Styles[i];
+                    bool active = string.Equals(Config.AnimStyle, style, StringComparison.OrdinalIgnoreCase);
+                    if (GUILayout.Button((active ? "● " : "") + style, GUILayout.Width(84f)))
+                    {
+                        Config.AnimStyle = style;
+                    }
+                    if (i == 3)
+                    {
+                        GUILayout.EndHorizontal();
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Space(4f);
+                    }
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Lang.T("自定义素材文件夹", "Custom animation"), GUILayout.Width(232f));
+                string[] folders = ListAnimFolders();
+                string current = string.IsNullOrEmpty(Config.AnimFolder)
+                    ? (folders.Length > 0 ? folders[0] : Lang.T("（空）", "(empty)"))
+                    : Config.AnimFolder;
+                if (GUILayout.Button(current, GUILayout.Width(240f)))
+                {
+                    Config.AnimFolder = NextAnimFolder(folders, Config.AnimFolder);
+                }
+                if (GUILayout.Button(Lang.T("打开目录", "Open folder"), GUILayout.Width(100f)))
+                {
+                    OpenAnimFolder();
+                }
+                GUILayout.EndHorizontal();
+
+                bool barSlot = string.Equals(Config.AnimSlot, "bar", StringComparison.OrdinalIgnoreCase);
+                Config.AnimSlot = RowToggle(Lang.T("自定义动画放顶栏（否则居中）", "Put custom animation in the bar"), barSlot) ? "bar" : "center";
+                Config.AnimFps = RowSlider(Lang.T("自定义动画帧率(0=用json)", "Custom fps (0 = use json)"), Config.AnimFps, 0f, 60f, "0");
+                Config.AnimScale = RowSlider(Lang.T("中央指示器 大小", "Center indicator size"), Config.AnimScale, 0.2f, 4f, "0.00");
+                Config.AnimOffsetY = RowSlider(Lang.T("中央指示器 垂直偏移", "Center indicator Y"), Config.AnimOffsetY, -400f, 400f, "0");
+                GUILayout.EndVertical();
+
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(Lang.T("恢复默认", "Reset defaults"), GUILayout.Width(120f)))
                 {
@@ -240,6 +285,48 @@ namespace PhigrosLoading
                 Error(e);
             }
         }
+        private static string[] ListAnimFolders()
+        {
+            try
+            {
+                string root = Path.Combine(Main.ModPath, "Animations");
+                if (!Directory.Exists(root)) return new string[0];
+
+                string[] dirs = Directory.GetDirectories(root);
+                string[] names = new string[dirs.Length];
+                for (int i = 0; i < dirs.Length; i++) names[i] = Path.GetFileName(dirs[i]);
+                Array.Sort(names, StringComparer.OrdinalIgnoreCase);
+                return names;
+            }
+            catch (Exception e)
+            {
+                Error(e);
+                return new string[0];
+            }
+        }
+
+        private static string NextAnimFolder(string[] folders, string current)
+        {
+            if (folders.Length == 0) return "";
+            int index = Array.FindIndex(folders, f => string.Equals(f, current, StringComparison.OrdinalIgnoreCase));
+            index = (index + 1) % folders.Length;
+            return folders[index];
+        }
+
+        private static void OpenAnimFolder()
+        {
+            try
+            {
+                string root = Path.Combine(Main.ModPath, "Animations");
+                if (!Directory.Exists(root)) Directory.CreateDirectory(root);
+                System.Diagnostics.Process.Start("explorer.exe", "\"" + root + "\"");
+            }
+            catch (Exception e)
+            {
+                Error(e);
+            }
+        }
+
         private static bool RowToggle(string label, bool value)
         {
             GUILayout.BeginHorizontal();

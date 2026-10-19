@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.0
+- **Loading animations**: 7 built-in styles — `sweep`, `pulse`, `wave`, `flow`, `spinner`,`ndots` and `custom` — switchable in the UMM panel.
+- **Custom animations**: drop PNG sequences or a sprite sheet into `Animations\<name>\` (optional`n`anim.json` with `fps` / `columns` / `frames`). Can be shown in the center or in the top bar.
+- Judgment is manual by default (`RecordJudge` off).
+
 ## 2.3.2
 - Fix: the judge buttons in the rating window were declared but never actually built, so the
   selector was invisible and judgments could not be set manually. The row (Wide / Normal /

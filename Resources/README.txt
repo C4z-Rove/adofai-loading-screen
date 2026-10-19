@@ -1,6 +1,37 @@
 Adofai Loading Screen  ——  冰与火之舞 (A Dance of Fire and Ice) Mod
 ====================================================================
 
+加载动画（2.4.0 新增）
+----------------------
+内置 7 种样式，UMM 面板「加载画面 · 动画样式」里点一下切换：
+
+    sweep    红/蓝色块从左扫到右（默认）
+    pulse    整条按进度填充，颜色和亮度呼吸
+    wave     整条按进度填充，顶边做正弦波浪
+    flow     斜纹流动的进度条
+    spinner  屏幕中央一个旋转圆环（不显示顶栏）
+    dots     屏幕中央三个点依次亮起
+    custom   使用自己放的动画素材
+
+中央指示器（spinner / dots / custom）可调大小 AnimScale、垂直偏移 AnimOffsetY；
+custom 也可以放到顶栏：AnimSlot = bar。
+
+自定义动画
+----------
+目录：Mods\PhigrosLoading\Animations\<名字>\
+UMM 面板里点按钮切换文件夹，「打开目录」直接打开它。两种格式：
+
+  1) PNG 序列
+       Animations\my\0001.png 0002.png ...
+       Animations\my\anim.json  { "fps": 24 }
+
+  2) 雪碧图
+       Animations\my\sheet.png
+       Animations\my\anim.json  { "columns": 8, "frames": 48, "fps": 24 }
+
+限制：最多 128 帧，单帧建议 ≤1024px；解码后缓存在内存，切帧不读盘。
+帧率优先级：AnimFps(>0) > anim.json 的 fps > 24。
+自带一个示例：Animations\demo_spin\（24 帧旋转圆环）。
 功能
 ----
 1) 加载画面
