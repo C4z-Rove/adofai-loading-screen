@@ -48,7 +48,7 @@ namespace PhigrosLoading
                 // 让加载动画在窗口失焦/后台时也继续跑
                 Application.runInBackground = true;
 
-                Log.Log("Adofai Loading Screen v2.5.0 loaded. ModPath = " + ModPath);
+                Log.Log("Adofai Loading Screen v2.5.1 loaded. ModPath = " + ModPath);
                 return true;
             }
             catch (Exception e)
@@ -271,6 +271,16 @@ namespace PhigrosLoading
                 Config.AnimFps = RowSlider(Lang.T("自定义动画帧率(0=用json)", "Custom fps (0 = use json)"), Config.AnimFps, 0f, 60f, "0");
                 Config.AnimScale = RowSlider(Lang.T("中央指示器 大小", "Center indicator size"), Config.AnimScale, 0.2f, 4f, "0.00");
                 Config.AnimOffsetY = RowSlider(Lang.T("中央指示器 垂直偏移", "Center indicator Y"), Config.AnimOffsetY, -400f, 400f, "0");
+                GUILayout.EndVertical();
+
+                GUILayout.BeginVertical("box");
+                GUILayout.Label("<b>" + Lang.T("boss 演出（按评级自动选）", "Boss animation (per rating)") + "</b>");
+                Config.BossSpeed = RowSlider(Lang.T("演出速度", "Speed"), Config.BossSpeed, 0.4f, 2f, "0.00");
+                Config.BossScale = RowSlider(Lang.T("圆圈大小", "Circle size"), Config.BossScale, 0.5f, 1.8f, "0.00");
+                Config.BossDigitScale = RowSlider(Lang.T("数字大小", "Digit size"), Config.BossDigitScale, 0.6f, 1.6f, "0.00");
+                Config.BossGlitch = RowSlider(Lang.T("故障强度(0=关)", "Glitch strength (0=off)"), Config.BossGlitch, 0f, 2f, "0.00");
+                GUILayout.Label(Lang.T("P1-9 简易 / P10-20 标准 / G1-9 侧飞 / G10-20 坠落 / U1-9 冲刺 / U10-14 汇聚 / U15-16 重故障 / U17-19 数字先行 / U20 大招 / UJ 螺旋",
+                    "P1-9 simple / P10-20 classic / G1-9 side-in / G10-20 drop / U1-9 dash / U10-14 arcs / U15-16 heavy glitch / U17-19 digits first / U20 ultimate / UJ spiral"));
                 GUILayout.EndVertical();
 
                 GUILayout.BeginHorizontal();

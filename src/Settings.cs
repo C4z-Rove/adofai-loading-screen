@@ -139,6 +139,18 @@ namespace PhigrosLoading
         /// <summary>中央指示器垂直偏移</summary>
         public float AnimOffsetY = 0f;
 
+        /// <summary>boss 演出速度倍率（1 = 原速）</summary>
+        public float BossSpeed = 1f;
+
+        /// <summary>boss 圆圈大小倍率</summary>
+        public float BossScale = 1f;
+
+        /// <summary>boss 故障强度倍率（0 = 关掉故障）</summary>
+        public float BossGlitch = 1f;
+
+        /// <summary>boss 数字大小倍率</summary>
+        public float BossDigitScale = 1f;
+
         /// <summary>色块扫过一次的时长（秒）</summary>
         public float BarSweepSeconds = 1.1f;
 
@@ -197,6 +209,10 @@ namespace PhigrosLoading
             AnimFps = d.AnimFps;
             AnimScale = d.AnimScale;
             AnimOffsetY = d.AnimOffsetY;
+            BossSpeed = d.BossSpeed;
+            BossScale = d.BossScale;
+            BossGlitch = d.BossGlitch;
+            BossDigitScale = d.BossDigitScale;
             BarSweepSeconds = d.BarSweepSeconds;
             BarSweepWidth = d.BarSweepWidth;
             PercentFont = d.PercentFont;

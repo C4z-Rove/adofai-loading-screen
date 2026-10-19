@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.1
+- Boss animation is now tunable from the UMM panel: speed, circle size, digit size and glitch
+  strength (`BossSpeed` / `BossScale` / `BossDigitScale` / `BossGlitch`). The minimum display
+  time follows the speed so the show is never cut off.
+
 ## 2.5.0
 - **10 boss variants**, picked automatically from the chart rating:
   P1-9 (simple), P10-20 (classic), G1-9 (spin + side-in), G10-20 (bounce drop + flash),

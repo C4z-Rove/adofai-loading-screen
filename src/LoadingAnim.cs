@@ -667,10 +667,25 @@ namespace PhigrosLoading
             return n1 * t * t + 0.984375f;
         }
 
+        /// <summary>当前 boss 演出在给定设置下的总时长（秒）。</summary>
+        public float BossDuration(Settings cfg)
+        {
+            float speed = cfg != null ? Mathf.Clamp(cfg.BossSpeed, 0.4f, 2f) : 1f;
+            return PlanOf(_bossKind).Duration / speed;
+        }
+
         private void TickBoss(float dt)
         {
             _bossTime += dt;
-            float t = _bossTime;
+
+            Settings cfg = Main.Config;
+            float speed = cfg != null ? Mathf.Clamp(cfg.BossSpeed, 0.4f, 2f) : 1f;
+            float sizeMul = cfg != null ? Mathf.Clamp(cfg.BossScale, 0.5f, 1.8f) : 1f;
+            float glitchMul = cfg != null ? Mathf.Clamp(cfg.BossGlitch, 0f, 2f) : 1f;
+            float digitMul = cfg != null ? Mathf.Clamp(cfg.BossDigitScale, 0.6f, 1.6f) : 1f;
+            float circleSize = BossCircleSize * sizeMul;
+
+            float t = _bossTime * speed;
             float H = _bossRoot != null ? _bossRoot.rect.height : 1080f;
             float W = _bossRoot != null ? _bossRoot.rect.width : 1920f;
             if (H <= 1f) H = 1080f;
@@ -712,6 +727,7 @@ namespace PhigrosLoading
             float circleRot = Mathf.Lerp(plan.CircleFromRot, 0f, circleEase);
 
             // 故障抖动
+            plan.Glitch = Mathf.Clamp01(plan.Glitch * glitchMul);
             float burstChance = 0.08f + 0.22f * plan.Glitch;
             bool burst = t > plan.DigitStart && t < total - 0.7f
                 && Mathf.Repeat(t - plan.DigitStart, Mathf.Max(0.16f, 0.52f - 0.25f * plan.Glitch)) < burstChance;
@@ -722,7 +738,7 @@ namespace PhigrosLoading
             if (_bossLetter != null)
             {
                 _bossLetter.rectTransform.anchoredPosition = circlePos;
-                _bossLetter.rectTransform.sizeDelta = new Vector2(BossCircleSize, BossCircleSize);
+                _bossLetter.rectTransform.sizeDelta = new Vector2(circleSize, circleSize);
                 _bossLetter.rectTransform.localRotation = Quaternion.Euler(0f, 0f, circleRot);
                 _bossLetter.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
 
@@ -742,8 +758,8 @@ namespace PhigrosLoading
                     _bossGlitchB.enabled = true;
                     _bossGlitchA.rectTransform.anchoredPosition = circlePos + new Vector2(-off, 0f);
                     _bossGlitchB.rectTransform.anchoredPosition = circlePos + new Vector2(off, 0f);
-                    _bossGlitchA.rectTransform.sizeDelta = new Vector2(BossCircleSize, BossCircleSize);
-                    _bossGlitchB.rectTransform.sizeDelta = new Vector2(BossCircleSize, BossCircleSize);
+                    _bossGlitchA.rectTransform.sizeDelta = new Vector2(circleSize, circleSize);
+                    _bossGlitchB.rectTransform.sizeDelta = new Vector2(circleSize, circleSize);
                     _bossGlitchA.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
                     _bossGlitchB.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
                     _bossGlitchA.color = new Color(1f, 0.25f, 0.35f, ghostAlpha * fade);
@@ -764,7 +780,7 @@ namespace PhigrosLoading
                 if (on)
                 {
                     _bossSpinRing.rectTransform.anchoredPosition = circlePos;
-                    _bossSpinRing.rectTransform.sizeDelta = new Vector2(BossCircleSize * 1.12f, BossCircleSize * 1.12f);
+                    _bossSpinRing.rectTransform.sizeDelta = new Vector2(circleSize * 1.12f, circleSize * 1.12f);
                     _bossSpinRing.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -t * 220f);
                     _bossSpinRing.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
                     float hue = Mathf.Repeat(t * 0.35f, 1f);
@@ -776,10 +792,10 @@ namespace PhigrosLoading
 
             // 3) 数字
             int count = Mathf.Min(2, _bossDigitsValue.Length);
-            float finalFont = BossCircleSize * 0.40f;
+            float finalFont = circleSize * 0.40f * digitMul;
             float startFont = finalFont * 1.9f;
             float gap = finalFont * 0.62f;
-            float targetY = BossCircleY - BossCircleSize * 0.13f;
+            float targetY = BossCircleY - circleSize * 0.13f;
 
             for (int i = 0; i < count; i++)
             {
