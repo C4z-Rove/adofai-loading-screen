@@ -47,5 +47,6 @@
   "AnimScale": 1,
   "AnimOffsetY": 0,
   "PreviewOnStart": false,
-  "AnimStyle": "boss"
+  "AnimStyle": "boss",
+  "PreviewMark": "P19"
 }

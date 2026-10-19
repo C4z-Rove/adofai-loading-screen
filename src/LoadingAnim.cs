@@ -60,6 +60,11 @@ namespace PhigrosLoading
         private Sprite _bossLetterSprite;
         private float _bossTime;
 
+        private BossKind _bossKind = BossKind.Classic;
+        private Image _bossFlash;
+        private Image _bossWave;
+        private Image _bossSpinRing;
+
         private string _style = StyleSweep;
         private float _time;
 
@@ -223,6 +228,29 @@ namespace PhigrosLoading
                 _bossDigits[i].gameObject.SetActive(false);
             }
 
+            // 白闪
+            RectTransform flash = UiKit.Rect("Flash", _bossRoot);
+            UiKit.Stretch(flash);
+            _bossFlash = UiKit.Image(flash, new Color(1f, 1f, 1f, 0f));
+
+            // 冲击波
+            RectTransform wave = UiKit.Rect("Wave", _bossRoot);
+            wave.anchorMin = wave.anchorMax = new Vector2(0.5f, 0.5f);
+            wave.pivot = new Vector2(0.5f, 0.5f);
+            wave.sizeDelta = new Vector2(300f, 300f);
+            wave.anchoredPosition = new Vector2(0f, BossCircleY);
+            _bossWave = UiKit.Image(wave, new Color(1f, 1f, 1f, 0f), MakeRingSprite(128, 6f));
+            _bossWave.enabled = false;
+
+            // UJ 旋转环
+            RectTransform spin = UiKit.Rect("SpinRing", _bossRoot);
+            spin.anchorMin = spin.anchorMax = new Vector2(0.5f, 0.5f);
+            spin.pivot = new Vector2(0.5f, 0.5f);
+            spin.sizeDelta = new Vector2(460f, 460f);
+            spin.anchoredPosition = new Vector2(0f, BossCircleY);
+            _bossSpinRing = UiKit.Image(spin, new Color(1f, 0.3f, 0.4f, 0f), MakeRingSprite(128, 8f));
+            _bossSpinRing.enabled = false;
+
             _bossRoot.gameObject.SetActive(false);
             _bossRoot.SetAsLastSibling();
         }
@@ -272,6 +300,7 @@ namespace PhigrosLoading
 
             _bossLetterSprite = null;
             _bossDigitsValue = "";
+            _bossKind = ResolveKind(mark);
 
             try
             {
@@ -404,65 +433,321 @@ namespace PhigrosLoading
         }
 
         // ------------------------------------------------------------------
-        // boss 动画
-        // ------------------------------------------------------------------
-        // ------------------------------------------------------------------
-        // boss 动画：黑屏 → 圆圈从中心放大 → 数字从下方飞进圆圈 → 故障 → 淡出
+        // boss 动画：按评级分成 10 种不同的演出
         // ------------------------------------------------------------------
         private const float BossCircleY = 40f;
         private const float BossCircleSize = 420f;
+
+        private enum BossKind
+        {
+            Simple,        // P1-P9
+            Classic,       // P10-P20
+            SideIn,        // G1-G9
+            DropBounce,    // G10-G20
+            Dash,          // U1-U9
+            Arc,           // U10-U14
+            HeavyGlitch,   // U15-U16
+            DigitsFirst,   // U17-U19
+            Ultimate,      // U20
+            Spiral         // UJ
+        }
+
+        private enum EaseKind { Cubic, Back, Bounce, Linear }
+
+        private struct BossPlan
+        {
+            public float Duration;
+            public float CircleStart;
+            public float CircleDur;
+            public float CircleFromScale;
+            public float CircleFromRot;
+            public EaseKind CircleEase;
+            public float DigitStart;
+            public float DigitGap;
+            public float DigitDur;
+            public EaseKind DigitEase;
+            public int DigitDir;        // 0 下方 1 上方 2 左右 3 四角 4 螺旋
+            public float Glitch;        // 0..1
+            public bool DigitsFirst;
+            public bool Flash;
+            public bool Wave;
+            public bool SpinRing;
+        }
+
+        private static BossKind ResolveKind(string mark)
+        {
+            if (string.IsNullOrEmpty(mark)) return BossKind.Classic;
+
+            char letter = char.ToUpperInvariant(mark[0]);
+            string digits = DigitsOf(mark);
+            int value = 0;
+            int.TryParse(digits, out value);
+            bool hasJ = mark.Length > 0 && char.ToUpperInvariant(mark[mark.Length - 1]) == 'J';
+
+            if (letter == 'P') return value <= 9 ? BossKind.Simple : BossKind.Classic;
+            if (letter == 'G') return value <= 9 ? BossKind.SideIn : BossKind.DropBounce;
+            if (letter == 'U')
+            {
+                if (hasJ) return BossKind.Spiral;
+                if (value <= 9) return BossKind.Dash;
+                if (value <= 14) return BossKind.Arc;
+                if (value <= 16) return BossKind.HeavyGlitch;
+                if (value <= 19) return BossKind.DigitsFirst;
+                return BossKind.Ultimate;
+            }
+            return BossKind.Classic;
+        }
+
+        private static BossPlan PlanOf(BossKind kind)
+        {
+            BossPlan p = new BossPlan();
+            p.CircleStart = 0.22f;
+            p.CircleDur = 0.55f;
+            p.CircleFromScale = 0.32f;
+            p.CircleFromRot = 0f;
+            p.CircleEase = EaseKind.Cubic;
+            p.DigitStart = 0.80f;
+            p.DigitGap = 0.26f;
+            p.DigitDur = 0.95f;
+            p.DigitEase = EaseKind.Cubic;
+            p.DigitDir = 0;
+            p.Glitch = 0.35f;
+            p.DigitsFirst = false;
+            p.Flash = false;
+            p.Wave = false;
+            p.SpinRing = false;
+
+            switch (kind)
+            {
+                case BossKind.Simple:
+                    p.Duration = 3.4f;
+                    p.DigitStart = 0.55f;
+                    p.DigitDur = 1.05f;
+                    p.Glitch = 0f;
+                    break;
+
+                case BossKind.Classic:
+                    p.Duration = 4.6f;
+                    break;
+
+                case BossKind.SideIn:
+                    p.Duration = 3.9f;
+                    p.CircleFromRot = 160f;
+                    p.CircleEase = EaseKind.Back;
+                    p.DigitStart = 0.62f;
+                    p.DigitDur = 0.9f;
+                    p.DigitEase = EaseKind.Back;
+                    p.DigitDir = 2;
+                    p.Glitch = 0.18f;
+                    break;
+
+                case BossKind.DropBounce:
+                    p.Duration = 4.4f;
+                    p.CircleFromScale = 0.15f;
+                    p.CircleEase = EaseKind.Back;
+                    p.DigitStart = 0.70f;
+                    p.DigitDur = 1.1f;
+                    p.DigitEase = EaseKind.Bounce;
+                    p.DigitDir = 1;
+                    p.Glitch = 0.25f;
+                    p.Flash = true;
+                    break;
+
+                case BossKind.Dash:
+                    p.Duration = 3.6f;
+                    p.CircleFromScale = 0.55f;
+                    p.CircleDur = 0.35f;
+                    p.DigitStart = 0.50f;
+                    p.DigitDur = 0.55f;
+                    p.DigitEase = EaseKind.Linear;
+                    p.Glitch = 0.45f;
+                    break;
+
+                case BossKind.Arc:
+                    p.Duration = 4.2f;
+                    p.CircleFromScale = 1.35f;
+                    p.CircleEase = EaseKind.Cubic;
+                    p.DigitStart = 0.62f;
+                    p.DigitGap = 0.20f;
+                    p.DigitDur = 1.0f;
+                    p.DigitDir = 3;
+                    p.Glitch = 0.2f;
+                    break;
+
+                case BossKind.HeavyGlitch:
+                    p.Duration = 4.8f;
+                    p.DigitStart = 0.75f;
+                    p.DigitDur = 1.35f;
+                    p.Glitch = 0.95f;
+                    break;
+
+                case BossKind.DigitsFirst:
+                    p.Duration = 4.4f;
+                    p.DigitsFirst = true;
+                    p.CircleStart = 1.15f;
+                    p.CircleFromScale = 2.1f;
+                    p.CircleEase = EaseKind.Back;
+                    p.DigitStart = 0.30f;
+                    p.DigitDur = 1.1f;
+                    p.Glitch = 0.3f;
+                    break;
+
+                case BossKind.Ultimate:
+                    p.Duration = 5.2f;
+                    p.CircleStart = 0.45f;
+                    p.CircleDur = 0.5f;
+                    p.CircleFromScale = 6f;
+                    p.CircleEase = EaseKind.Back;
+                    p.DigitStart = 0.85f;
+                    p.DigitGap = 0.22f;
+                    p.DigitDur = 0.95f;
+                    p.DigitEase = EaseKind.Bounce;
+                    p.DigitDir = 1;
+                    p.Glitch = 0.85f;
+                    p.Flash = true;
+                    p.Wave = true;
+                    break;
+
+                case BossKind.Spiral:
+                    p.Duration = 4.6f;
+                    p.CircleStart = 0.2f;
+                    p.CircleDur = 0.6f;
+                    p.CircleFromScale = 0.1f;
+                    p.CircleFromRot = -220f;
+                    p.CircleEase = EaseKind.Back;
+                    p.DigitStart = 0.70f;
+                    p.DigitGap = 0.24f;
+                    p.DigitDur = 1.2f;
+                    p.DigitDir = 4;
+                    p.Glitch = 0.3f;
+                    p.SpinRing = true;
+                    break;
+            }
+
+            return p;
+        }
+
+        private static float Ease(EaseKind kind, float t)
+        {
+            t = Mathf.Clamp01(t);
+            switch (kind)
+            {
+                case EaseKind.Back:
+                {
+                    float c = 1.70158f;
+                    float u = t - 1f;
+                    return 1f + (c + 1f) * u * u * u + c * u * u;
+                }
+                case EaseKind.Bounce:
+                    return BounceOut(t);
+                case EaseKind.Linear:
+                    return t;
+                default:
+                    return 1f - Mathf.Pow(1f - t, 3f);
+            }
+        }
+
+        private static float BounceOut(float t)
+        {
+            const float n1 = 7.5625f;
+            const float d1 = 2.75f;
+
+            if (t < 1f / d1) return n1 * t * t;
+            if (t < 2f / d1)
+            {
+                t -= 1.5f / d1;
+                return n1 * t * t + 0.75f;
+            }
+            if (t < 2.5f / d1)
+            {
+                t -= 2.25f / d1;
+                return n1 * t * t + 0.9375f;
+            }
+            t -= 2.625f / d1;
+            return n1 * t * t + 0.984375f;
+        }
 
         private void TickBoss(float dt)
         {
             _bossTime += dt;
             float t = _bossTime;
             float H = _bossRoot != null ? _bossRoot.rect.height : 1080f;
+            float W = _bossRoot != null ? _bossRoot.rect.width : 1920f;
             if (H <= 1f) H = 1080f;
+            if (W <= 1f) W = 1920f;
 
-            // 1) 黑屏淡入
+            BossPlan plan = PlanOf(_bossKind);
+            float total = plan.Duration;
+            float fadeOutStart = total - 0.55f;
+            float fade = t > fadeOutStart ? Mathf.Clamp01(1f - (t - fadeOutStart) / 0.55f) : 1f;
+
+            // 1) 黑屏
             if (_bossBlack != null)
             {
+                float black = Mathf.Clamp01(t / 0.22f);
+                if (_bossKind == BossKind.Ultimate)
+                {
+                    // U20：开头闪两下
+                    black = Mathf.Clamp01(t / 0.12f);
+                    if (t > 0.16f && t < 0.22f) black = 0.35f;
+                    if (t > 0.28f && t < 0.32f) black = 0.6f;
+                }
                 Color c = Color.black;
-                c.a = Mathf.Clamp01(t / 0.22f);
+                c.a = black;
                 _bossBlack.color = c;
             }
 
-            // 2) 圆圈：放大 + 居中
-            float circleT = Mathf.Clamp01((t - 0.22f) / 0.55f);
-            float circleEase = 1f - Mathf.Pow(1f - circleT, 3f);
-            float circleScale = Mathf.Lerp(0.32f, 1f, circleEase);
-            if (t > 3.4f) circleScale *= 1f + 0.02f * Mathf.Clamp01((t - 3.4f) / 0.6f);
+            // 2) 圆圈
+            float circleT = Mathf.Clamp01((t - plan.CircleStart) / Mathf.Max(0.05f, plan.CircleDur));
+            float circleEase = Ease(plan.CircleEase, circleT);
+            float circleScale = Mathf.Lerp(plan.CircleFromScale, 1f, circleEase);
+            float circleAlpha = Mathf.Clamp01(circleT * 2f);
 
-            Vector2 circlePos = new Vector2(0f, BossCircleY);
+            if (plan.DigitsFirst)
+            {
+                // 数字先出现，圆圈后飞过来把数字框住
+                circleAlpha = Mathf.Clamp01(circleT * 2.5f);
+            }
+
+            float circleRot = Mathf.Lerp(plan.CircleFromRot, 0f, circleEase);
 
             // 故障抖动
-            bool burst = t > 2.0f && t < 3.6f && Mathf.Repeat(t - 2.0f, 0.5f) < 0.08f;
-            if (burst) circlePos += new Vector2(UnityEngine.Random.Range(-6f, 6f), UnityEngine.Random.Range(-3f, 3f));
+            float burstChance = 0.08f + 0.22f * plan.Glitch;
+            bool burst = t > plan.DigitStart && t < total - 0.7f
+                && Mathf.Repeat(t - plan.DigitStart, Mathf.Max(0.16f, 0.52f - 0.25f * plan.Glitch)) < burstChance;
+
+            Vector2 circlePos = new Vector2(0f, BossCircleY);
+            if (burst) circlePos += new Vector2(UnityEngine.Random.Range(-8f, 8f) * plan.Glitch, UnityEngine.Random.Range(-4f, 4f) * plan.Glitch);
 
             if (_bossLetter != null)
             {
                 _bossLetter.rectTransform.anchoredPosition = circlePos;
                 _bossLetter.rectTransform.sizeDelta = new Vector2(BossCircleSize, BossCircleSize);
+                _bossLetter.rectTransform.localRotation = Quaternion.Euler(0f, 0f, circleRot);
                 _bossLetter.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
+
                 Color c = Color.white;
-                c.a = circleT;
+                c.a = circleAlpha * fade;
                 _bossLetter.color = c;
             }
 
-            // 圆圈边缘的彩色残影（故障）
+            // 字母残影（故障）
             if (_bossGlitchA != null && _bossGlitchB != null)
             {
+                float ghostAlpha = 0.18f + 0.45f * plan.Glitch;
                 if (burst && _bossLetterSprite != null)
                 {
-                    float off = UnityEngine.Random.Range(8f, 20f);
+                    float off = UnityEngine.Random.Range(6f, 10f + 16f * plan.Glitch);
                     _bossGlitchA.enabled = true;
                     _bossGlitchB.enabled = true;
                     _bossGlitchA.rectTransform.anchoredPosition = circlePos + new Vector2(-off, 0f);
                     _bossGlitchB.rectTransform.anchoredPosition = circlePos + new Vector2(off, 0f);
+                    _bossGlitchA.rectTransform.sizeDelta = new Vector2(BossCircleSize, BossCircleSize);
+                    _bossGlitchB.rectTransform.sizeDelta = new Vector2(BossCircleSize, BossCircleSize);
                     _bossGlitchA.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
                     _bossGlitchB.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
-                    _bossGlitchA.color = new Color(1f, 0.25f, 0.35f, 0.45f * circleT);
-                    _bossGlitchB.color = new Color(0.25f, 0.75f, 1f, 0.45f * circleT);
+                    _bossGlitchA.color = new Color(1f, 0.25f, 0.35f, ghostAlpha * fade);
+                    _bossGlitchB.color = new Color(0.25f, 0.75f, 1f, ghostAlpha * fade);
                 }
                 else
                 {
@@ -471,10 +756,25 @@ namespace PhigrosLoading
                 }
             }
 
-            // 3) 数字：从下方飞进圆圈里
-            float fade = 1f;
-            if (t > 4.0f) fade = Mathf.Clamp01(1f - (t - 4.0f) / 0.55f);
+            // UJ：外圈旋转环
+            if (_bossSpinRing != null)
+            {
+                bool on = plan.SpinRing;
+                _bossSpinRing.enabled = on;
+                if (on)
+                {
+                    _bossSpinRing.rectTransform.anchoredPosition = circlePos;
+                    _bossSpinRing.rectTransform.sizeDelta = new Vector2(BossCircleSize * 1.12f, BossCircleSize * 1.12f);
+                    _bossSpinRing.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -t * 220f);
+                    _bossSpinRing.rectTransform.localScale = new Vector3(circleScale, circleScale, 1f);
+                    float hue = Mathf.Repeat(t * 0.35f, 1f);
+                    Color ring = Color.HSVToRGB(hue, 0.65f, 1f);
+                    ring.a = 0.85f * circleAlpha * fade;
+                    _bossSpinRing.color = ring;
+                }
+            }
 
+            // 3) 数字
             int count = Mathf.Min(2, _bossDigitsValue.Length);
             float finalFont = BossCircleSize * 0.40f;
             float startFont = finalFont * 1.9f;
@@ -486,42 +786,59 @@ namespace PhigrosLoading
                 Text digit = _bossDigits[i];
                 if (digit == null) continue;
 
-                float start = 0.80f + i * 0.26f;
-                float p = Mathf.Clamp01((t - start) / 0.95f);
-                float ease = 1f - Mathf.Pow(1f - p, 3f);
+                float start = plan.DigitStart + i * plan.DigitGap;
+                float p = Mathf.Clamp01((t - start) / Mathf.Max(0.05f, plan.DigitDur));
+                float ease = Ease(plan.DigitEase, p);
 
-                float y = Mathf.Lerp(-H * 0.62f, targetY, ease);
-                float x = (i - (count - 1) * 0.5f) * gap;
-                if (burst) x += UnityEngine.Random.Range(-5f, 5f);
+                float targetX = (i - (count - 1) * 0.5f) * gap;
+                Vector2 from;
+                Vector2 to = new Vector2(targetX, targetY);
 
-                float font = Mathf.Lerp(startFont, finalFont, ease);
+                switch (plan.DigitDir)
+                {
+                    case 1: from = new Vector2(targetX, H * 0.66f); break;
+                    case 2: from = new Vector2((i % 2 == 0 ? -1f : 1f) * W * 0.55f, targetY); break;
+                    case 3: from = new Vector2((i % 2 == 0 ? -1f : 1f) * W * 0.45f, -H * 0.45f); break;
+                    case 4:
+                    {
+                        float angle = Mathf.Lerp(200f, 0f, ease) * Mathf.Deg2Rad;
+                        float radius = Mathf.Lerp(520f, 0f, ease);
+                        from = new Vector2(targetX + Mathf.Cos(angle) * radius, targetY + Mathf.Sin(angle) * radius);
+                        break;
+                    }
+                    default: from = new Vector2(targetX, -H * 0.62f); break;
+                }
 
-                digit.rectTransform.anchoredPosition = new Vector2(x, y);
-                digit.fontSize = Mathf.Max(8, Mathf.RoundToInt(font));
+                Vector2 pos = new Vector2(Mathf.Lerp(from.x, to.x, ease), Mathf.Lerp(from.y, to.y, ease));
+                if (burst) pos += new Vector2(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f));
+
+                digit.rectTransform.anchoredPosition = pos;
+                digit.fontSize = Mathf.Max(8, Mathf.RoundToInt(Mathf.Lerp(startFont, finalFont, ease)));
 
                 Color c = Color.white;
-                c.a = Mathf.Clamp01(p * 4f) * fade * (burst ? 0.75f : 1f);
+                c.a = Mathf.Clamp01(p * 4f) * fade;
                 digit.color = c;
             }
 
-            // 数字的彩色残影
+            // 数字残影
             if (_bossGlitchTextA != null && _bossGlitchTextB != null)
             {
-                if (burst && count > 0)
+                if (burst && count > 0 && plan.Glitch > 0.1f)
                 {
                     _bossGlitchTextA.text = _bossDigitsValue;
                     _bossGlitchTextB.text = _bossDigitsValue;
                     _bossGlitchTextA.gameObject.SetActive(true);
                     _bossGlitchTextB.gameObject.SetActive(true);
 
-                    float off = UnityEngine.Random.Range(4f, 10f);
+                    float off = UnityEngine.Random.Range(4f, 6f + 12f * plan.Glitch);
                     Vector2 basePos = new Vector2(count > 1 ? -gap * 0.5f : 0f, targetY);
                     _bossGlitchTextA.rectTransform.anchoredPosition = basePos + new Vector2(-off, 0f);
                     _bossGlitchTextB.rectTransform.anchoredPosition = basePos + new Vector2(off, 0f);
                     _bossGlitchTextA.fontSize = Mathf.RoundToInt(finalFont);
                     _bossGlitchTextB.fontSize = Mathf.RoundToInt(finalFont);
-                    _bossGlitchTextA.color = new Color(1f, 0.25f, 0.35f, 0.28f * fade);
-                    _bossGlitchTextB.color = new Color(0.25f, 0.75f, 1f, 0.28f * fade);
+                    float ghost = 0.12f + 0.3f * plan.Glitch;
+                    _bossGlitchTextA.color = new Color(1f, 0.25f, 0.35f, ghost * fade);
+                    _bossGlitchTextB.color = new Color(0.25f, 0.75f, 1f, ghost * fade);
                 }
                 else
                 {
@@ -530,8 +847,45 @@ namespace PhigrosLoading
                 }
             }
 
+            // 4) 白闪
+            if (_bossFlash != null)
+            {
+                float flash = 0f;
+                if (plan.Flash)
+                {
+                    if (t > plan.CircleStart + plan.CircleDur * 0.8f && t < plan.CircleStart + plan.CircleDur * 0.8f + 0.18f) flash = 0.7f;
+                    if (_bossKind == BossKind.Ultimate)
+                    {
+                        if (t > plan.DigitStart + plan.DigitDur && t < plan.DigitStart + plan.DigitDur + 0.22f) flash = 0.9f;
+                    }
+                }
+                Color c = _bossFlash.color;
+                c.a = flash * fade;
+                _bossFlash.color = c;
+            }
+
+            // 5) 冲击波
+            if (_bossWave != null)
+            {
+                if (plan.Wave && t > plan.DigitStart + plan.DigitDur * 0.9f)
+                {
+                    float w = Mathf.Clamp01((t - (plan.DigitStart + plan.DigitDur * 0.9f)) / 1.1f);
+                    _bossWave.enabled = true;
+                    float size = Mathf.Lerp(360f, 1500f, w);
+                    _bossWave.rectTransform.sizeDelta = new Vector2(size, size);
+                    Color c = Color.white;
+                    c.a = (1f - w) * 0.55f * fade;
+                    _bossWave.color = c;
+                }
+                else
+                {
+                    _bossWave.enabled = false;
+                }
+            }
+
             if (_bossGroup != null) _bossGroup.alpha = Mathf.Clamp01(t / 0.2f);
         }
+
         private void TickBar(float p, Settings cfg)
         {
             float width = _track != null ? _track.rect.width : 0f;

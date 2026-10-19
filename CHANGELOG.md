@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.5.0
+- **10 boss variants**, picked automatically from the chart rating:
+  P1-9 (simple), P10-20 (classic), G1-9 (spin + side-in), G10-20 (bounce drop + flash),
+  U1-9 (dash), U10-14 (corner arcs), U15-16 (heavy glitch), U17-19 (digits first),
+  U20 (ultimate: flicker + shockwave + flash, 5.2 s), UJ (rainbow ring + spiral).
+- `PreviewMark` config to preview a specific rating.
+
 ## 2.4.1
 - **boss animation**: black fade-in, difficulty circle zooms into the centre (letters only — digits are
   stripped into `Marks\_split\<mark>_L.png` + `_d0/_d1` by `tools/split_marks.py`), then the digits

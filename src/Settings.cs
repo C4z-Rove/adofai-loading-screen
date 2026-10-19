@@ -21,6 +21,9 @@ namespace PhigrosLoading
         /// <summary>调试用：启动游戏后立刻预览一次加载画面（默认关闭）</summary>
         public bool PreviewOnStart = false;
 
+        /// <summary>调试预览用哪个评级（默认 P19）</summary>
+        public string PreviewMark = "P19";
+
         /// <summary>退出关卡时弹出评级窗口</summary>
         public bool RatingPrompt = true;
 
