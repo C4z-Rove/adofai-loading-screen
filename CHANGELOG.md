@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.4
+- Fix: in TUF mode the second digit text was force-hidden, so two-digit ratings lost their ones digit.
+  Digit visibility now follows the value length instead of the rating source.
+
 ## 2.8.3
 - TUF intro no longer leaves anything on screen after the fade: once the tier's timeline ends, all boss
   elements are hidden and only the black backdrop remains until the overlay closes.

@@ -337,7 +337,7 @@ namespace PhigrosLoading
             if (_bossDigits[0] != null) _bossDigits[0].gameObject.SetActive(true);
             if (_bossGgPrefix != null) _bossGgPrefix.gameObject.SetActive(!tuf);
             if (_bossGgRight != null) _bossGgRight.gameObject.SetActive(!tuf);
-            if (_bossDigits[1] != null) _bossDigits[1].gameObject.SetActive(!tuf && _bossDigitsValue.Length > 1);
+            if (_bossDigits[1] != null) _bossDigits[1].gameObject.SetActive(_bossDigitsValue.Length > 1);
         }
 
         /// <summary>告诉 boss 动画用哪张评级图（例如 P19）。</summary>
