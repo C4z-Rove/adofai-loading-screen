@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.8.1
+- GG intro: `<Lv.>` starts closed and opens while the digits rise; digits are now 4x the base size
+  (1000 px) and the brackets 0.25x (62 px) by default. Long values shrink automatically to fit 62% of
+  the screen width.
+
 ## 2.8.0
 - GG intro sizing: the number is now 2x bigger (500 px) and `<Lv.>` half size (125 px) by default, with both
   adjustable (`BossGgNumberSize` / `BossGgLabelSize`, sliders in the UMM panel under GG mode).

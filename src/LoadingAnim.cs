@@ -733,8 +733,8 @@ namespace PhigrosLoading
         }
 
         // ------------------------------------------------------------------
-        // boss · GG：一排 <Lv.XX> ——“<Lv.” 和 “>” 作为一个整体先出现，
-        // 数字单独从下方升起，落定后括号向两侧张开
+        // boss · GG：一排 <Lv.XX>
+        //   一开始 <Lv.> 是合在一起的，数字从下方升起的同时括号张开
         // ------------------------------------------------------------------
         private void TickBossGG(float dt)
         {
@@ -744,6 +744,8 @@ namespace PhigrosLoading
             float speed = cfg != null ? Mathf.Clamp(cfg.BossSpeed, 0.4f, 2f) : 1f;
             float sizeMul = cfg != null ? Mathf.Clamp(cfg.BossScale, 0.5f, 1.8f) : 1f;
             float glitchMul = cfg != null ? Mathf.Clamp(cfg.BossGlitch, 0f, 2f) : 1f;
+            float numScale = cfg != null ? Mathf.Clamp(cfg.BossGgNumberSize, 0.3f, 6f) : 4f;
+            float labelScale = cfg != null ? Mathf.Clamp(cfg.BossGgLabelSize, 0.1f, 3f) : 0.25f;
 
             float t = _bossTime * speed;
             const float total = 4.2f;
@@ -765,76 +767,81 @@ namespace PhigrosLoading
             if (_bossDigits[1] != null && _bossDigits[1].gameObject.activeSelf) _bossDigits[1].gameObject.SetActive(false);
 
             float H = _bossRoot != null ? _bossRoot.rect.height : 1080f;
+            float W = _bossRoot != null ? _bossRoot.rect.width : 1920f;
             if (H <= 1f) H = 1080f;
-
-            float land = 1.00f;
-            float shake = 0f;
-            if (t > land && t < land + 0.35f) shake = (1f - (t - land) / 0.35f) * 16f * glitchMul;
-
-            float numScale = cfg != null ? Mathf.Clamp(cfg.BossGgNumberSize, 0.3f, 4f) : 2f;
-            float labelScale = cfg != null ? Mathf.Clamp(cfg.BossGgLabelSize, 0.2f, 4f) : 0.5f;
-
-            float fontSize = Mathf.Max(24f, 250f * sizeMul * numScale);   // 数字
-            float labelSize = Mathf.Max(16f, 250f * sizeMul * labelScale); // <Lv. 与 >
-            int fs = Mathf.RoundToInt(fontSize);
-            int lfs = Mathf.RoundToInt(labelSize);
-
-            // 让两种字号大致基线对齐
-            float labelYOffset = -(fontSize - labelSize) * 0.16f;
+            if (W <= 1f) W = 1920f;
 
             Text left = _bossGgPrefix;
             Text right = _bossGgRight;
             Text main = _bossDigits[0];
-
             if (left == null || right == null || main == null) return;
 
-            left.fontSize = lfs;
-            right.fontSize = lfs;
-            main.fontSize = fs;
+            // 字号：数字大、括号小
+            int labelFont = Mathf.Max(12, Mathf.RoundToInt(250f * sizeMul * labelScale));
+            int numberFont = Mathf.Max(24, Mathf.RoundToInt(250f * sizeMul * numScale));
 
+            left.fontSize = labelFont;
+            right.fontSize = labelFont;
+            main.fontSize = numberFont;
             main.text = _bossGgValue;
             left.text = "<Lv.";
             right.text = ">";
 
-            float leftW = left.preferredWidth;
-            float rightW = right.preferredWidth;
+            // 位数适配：太长就把数字缩小到屏幕 62% 宽度以内
+            float maxNumWidth = W * 0.62f;
             float numW = main.preferredWidth;
+            if (numW > maxNumWidth && numW > 1f)
+            {
+                numberFont = Mathf.Max(24, Mathf.RoundToInt(numberFont * (maxNumWidth / numW)));
+                main.fontSize = numberFont;
+                numW = main.preferredWidth;
+            }
 
-            // 括号张开：从"贴着数字"到"留出空隙"
-            float open = Ease(EaseKind.Back, Mathf.Clamp01((t - land) / 0.42f));
-            float gap = Mathf.Lerp(labelSize * 0.04f, labelSize * 0.22f, open);
+            float labelW = left.preferredWidth;
+            float rightW = right.preferredWidth;
 
-            float totalW = leftW + gap * 2f + numW + rightW;
-            float startX = -totalW * 0.5f;
+            // 数字从下方升起（0.42 ~ 1.22），括号同步张开
+            float rise = Mathf.Clamp01((t - 0.42f) / 0.80f);
+            float riseEase = Ease(EaseKind.Cubic, rise);
+            float numY = Mathf.Lerp(-H * 0.34f, 0f, riseEase);
 
-            // "<Lv." 与 ">" 作为一组：一起淡入，一起轻微上移
-            float groupT = Mathf.Clamp01((t - 0.22f) / 0.34f);
-            float groupEase = Ease(EaseKind.Cubic, groupT);
-            float groupY = Mathf.Lerp(-26f, 0f, groupEase);
+            // 张开幅度跟标签字号走；闭合时几乎贴住数字
+            float closedGap = labelFont * 0.02f;
+            float openGap = labelFont * 0.30f;
+            float gap = Mathf.Lerp(closedGap, openGap, riseEase);
 
-            // 数字：从下方升起
-            float rise = Ease(EaseKind.Cubic, Mathf.Clamp01((t - 0.45f) / 0.80f));
-            float numY = Mathf.Lerp(-H * 0.34f, 0f, rise);
+            float leftX = -(labelW + gap + numW + gap + rightW) * 0.5f + labelW * 0.5f;
+            float rightX = leftX + labelW * 0.5f + gap + numW + gap + rightW * 0.5f;
+            float numX = leftX + labelW * 0.5f + gap + numW * 0.5f;
 
-            float jitterX = shake > 0f ? UnityEngine.Random.Range(-shake, shake) * 0.5f : 0f;
+            // 落地抖动
+            float land = 1.22f;
+            float shake = 0f;
+            if (t > land && t < land + 0.34f) shake = (1f - (t - land) / 0.34f) * 18f * glitchMul;
+
+            float jitterX = shake > 0f ? UnityEngine.Random.Range(-shake, shake) * 0.6f : 0f;
             float jitterY = shake > 0f ? UnityEngine.Random.Range(-shake, shake) * 0.5f : 0f;
+
+            // 标签基线对齐：小字号整体往下靠
+            float labelY = -(numberFont - labelFont) * 0.16f;
+
+            float groupT = Mathf.Clamp01((t - 0.18f) / 0.30f);
 
             left.gameObject.SetActive(true);
             right.gameObject.SetActive(true);
             main.gameObject.SetActive(true);
 
-            left.rectTransform.anchoredPosition = new Vector2(startX + leftW * 0.5f + jitterX, groupY + labelYOffset + jitterY);
-            right.rectTransform.anchoredPosition = new Vector2(startX + leftW + gap * 2f + numW + rightW * 0.5f + jitterX, groupY + labelYOffset + jitterY);
-            main.rectTransform.anchoredPosition = new Vector2(startX + leftW + gap + numW * 0.5f + jitterX * 0.6f, numY + jitterY);
+            left.rectTransform.anchoredPosition = new Vector2(leftX + jitterX, labelY + jitterY);
+            right.rectTransform.anchoredPosition = new Vector2(rightX + jitterX, labelY + jitterY);
+            main.rectTransform.anchoredPosition = new Vector2(numX + jitterX * 0.6f, numY + jitterY);
 
-            Color groupColor = Color.white;
-            groupColor.a = groupT * fade;
+            Color labelColor = Color.white;
+            labelColor.a = groupT * fade;
+            left.color = labelColor;
+            right.color = labelColor;
 
             Color numberColor = Color.white;
             numberColor.a = Mathf.Clamp01(rise * 2.6f) * fade;
-
-            left.color = groupColor;
-            right.color = groupColor;
             main.color = numberColor;
 
             // 白闪（数字落定）
@@ -865,8 +872,8 @@ namespace PhigrosLoading
                     _bossGlitchTextB.text = main.text;
                     _bossGlitchTextA.gameObject.SetActive(true);
                     _bossGlitchTextB.gameObject.SetActive(true);
-                    _bossGlitchTextA.fontSize = fs;
-                    _bossGlitchTextB.fontSize = fs;
+                    _bossGlitchTextA.fontSize = numberFont;
+                    _bossGlitchTextB.fontSize = numberFont;
                     _bossGlitchTextA.rectTransform.anchoredPosition = main.rectTransform.anchoredPosition + new Vector2(-off, 0f);
                     _bossGlitchTextB.rectTransform.anchoredPosition = main.rectTransform.anchoredPosition + new Vector2(off, 0f);
                     _bossGlitchTextA.color = new Color(1f, 0.25f, 0.35f, 0.30f * fade);

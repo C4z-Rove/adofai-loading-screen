@@ -158,10 +158,10 @@ namespace PhigrosLoading
         public string BossRatingSource = "tuf";
 
         /// <summary>GG 演出：数字大小倍率（基准 250px）</summary>
-        public float BossGgNumberSize = 2f;
+        public float BossGgNumberSize = 4f;
 
         /// <summary>GG 演出：&lt;Lv.&gt; 括号与文字大小倍率（基准 250px）</summary>
-        public float BossGgLabelSize = 0.5f;
+        public float BossGgLabelSize = 0.25f;
 
         /// <summary>色块扫过一次的时长（秒）</summary>
         public float BarSweepSeconds = 1.1f;

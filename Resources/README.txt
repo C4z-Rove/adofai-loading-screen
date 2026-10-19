@@ -58,9 +58,10 @@ boss 动画（魔王曲风格 · 2.5.0 起按评级分 10 种）
          GG 数值取自 AutoRating 的缓存；没有缓存时自动退回 TUF。
 
          GG 字号可单独调（UMM 面板，仅 GG 模式显示）：
-           GG 数字大小 BossGgNumberSize（默认 2.0，基准 250px）
-           GG 括号大小 BossGgLabelSize（默认 0.5）
-         两者按基线大致对齐，数字落了会白闪 + 抖动。
+           GG 数字大小 BossGgNumberSize（默认 4.0 → 1000px）
+           GG 括号大小 BossGgLabelSize（默认 0.25 → 62px）
+         两者按基线大致对齐；一开始 <Lv.> 是合拢的，数字从下方升起的同时括号张开。
+         位数自动适配：文字超过屏宽 62% 会自动缩小字号。
 
 
   演出参数可在 UMM 面板「boss 演出」里调：
