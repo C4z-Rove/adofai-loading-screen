@@ -224,12 +224,12 @@ namespace PhigrosLoading
             _bossLetter.preserveAspect = true;
 
             _bossGgPrefix = MakeBossText("GgPrefix", new Color(1f, 1f, 1f, 0.9f));
-            _bossGgPrefix.text = "《";
+            _bossGgPrefix.text = "<Lv.";
             _bossGgPrefix.fontSize = 300;
             _bossGgPrefix.gameObject.SetActive(false);
 
             _bossGgRight = MakeBossText("GgRight", new Color(1f, 1f, 1f, 0.9f));
-            _bossGgRight.text = "》";
+            _bossGgRight.text = ">";
             _bossGgRight.fontSize = 300;
             _bossGgRight.gameObject.SetActive(false);
 
@@ -733,7 +733,8 @@ namespace PhigrosLoading
         }
 
         // ------------------------------------------------------------------
-        // boss · GG：一排 「《 Lv.XX 》」——数字从下方升起，书名号落地时向外张开
+        // boss · GG：一排 <Lv.XX> ——“<Lv.” 和 “>” 作为一个整体先出现，
+        // 数字单独从下方升起，落定后括号向两侧张开
         // ------------------------------------------------------------------
         private void TickBossGG(float dt)
         {
@@ -766,85 +767,89 @@ namespace PhigrosLoading
             float H = _bossRoot != null ? _bossRoot.rect.height : 1080f;
             if (H <= 1f) H = 1080f;
 
-            // 冲击抖动（落地后 0.35 秒内）
-            float land = 1.05f;
+            float land = 1.00f;
             float shake = 0f;
             if (t > land && t < land + 0.35f) shake = (1f - (t - land) / 0.35f) * 16f * glitchMul;
 
-            // 主文字：Lv.XX，从下方升起
+            float fontSize = Mathf.Max(24f, 250f * sizeMul);
+            int fs = Mathf.RoundToInt(fontSize);
+
+            Text left = _bossGgPrefix;
+            Text right = _bossGgRight;
             Text main = _bossDigits[0];
-            float fontSize = Mathf.Max(24f, 300f * sizeMul);
-            float rise = Ease(EaseKind.Cubic, Mathf.Clamp01((t - 0.30f) / 0.78f));
 
-            if (main != null)
-            {
-                main.gameObject.SetActive(true);
-                main.text = "Lv." + _bossGgValue;
-                main.fontSize = Mathf.RoundToInt(fontSize);
+            if (left == null || right == null || main == null) return;
 
-                float y = Mathf.Lerp(-H * 0.34f, 0f, rise);
-                if (shake > 0f) y += UnityEngine.Random.Range(-shake, shake) * 0.5f;
-                main.rectTransform.anchoredPosition = new Vector2(UnityEngine.Random.Range(-shake, shake) * 0.6f, y);
+            // 统一的字体大小
+            left.fontSize = fs;
+            right.fontSize = fs;
+            main.fontSize = fs;
 
-                Color c = Color.white;
-                c.a = Mathf.Clamp01(rise * 2.5f) * fade;
-                main.color = c;
-            }
+            main.text = _bossGgValue;
+            left.text = "<Lv.";
+            right.text = ">";
 
-            // 书名号：先贴近文字，落地后向外张开
-            if (_bossGgPrefix != null && _bossGgRight != null && main != null)
-            {
-                float appear = Mathf.Clamp01((t - 0.52f) / 0.30f);
-                float open = Ease(EaseKind.Back, Mathf.Clamp01((t - land) / 0.42f));
+            float leftW = left.preferredWidth;
+            float rightW = right.preferredWidth;
+            float numW = main.preferredWidth;
 
-                float bracketSize = fontSize * 1.12f;
-                _bossGgPrefix.fontSize = Mathf.RoundToInt(bracketSize);
-                _bossGgRight.fontSize = Mathf.RoundToInt(bracketSize);
+            // 括号张开：从"贴着数字"到"留出空隙"
+            float open = Ease(EaseKind.Back, Mathf.Clamp01((t - land) / 0.42f));
+            float gap = Mathf.Lerp(fontSize * 0.02f, fontSize * 0.12f, open);
 
-                float halfWidth = main.preferredWidth * 0.5f;
-                float gap = Mathf.Lerp(-fontSize * 0.10f, fontSize * 0.16f, open);
+            float totalW = leftW + gap * 2f + numW + rightW;
+            float startX = -totalW * 0.5f;
 
-                float leftX = -halfWidth - gap - bracketSize * 0.16f;
-                float rightX = halfWidth + gap + bracketSize * 0.16f;
+            // "<Lv." 与 ">" 作为一组：一起淡入，一起轻微上移
+            float groupT = Mathf.Clamp01((t - 0.22f) / 0.34f);
+            float groupEase = Ease(EaseKind.Cubic, groupT);
+            float groupY = Mathf.Lerp(-26f, 0f, groupEase);
 
-                if (shake > 0f)
-                {
-                    leftX -= UnityEngine.Random.Range(0f, shake) * 0.5f;
-                    rightX += UnityEngine.Random.Range(0f, shake) * 0.5f;
-                }
+            // 数字：从下方升起
+            float rise = Ease(EaseKind.Cubic, Mathf.Clamp01((t - 0.45f) / 0.80f));
+            float numY = Mathf.Lerp(-H * 0.34f, 0f, rise);
 
-                _bossGgPrefix.gameObject.SetActive(true);
-                _bossGgRight.gameObject.SetActive(true);
+            float jitterX = shake > 0f ? UnityEngine.Random.Range(-shake, shake) * 0.5f : 0f;
+            float jitterY = shake > 0f ? UnityEngine.Random.Range(-shake, shake) * 0.5f : 0f;
 
-                _bossGgPrefix.rectTransform.anchoredPosition = new Vector2(leftX, 0f);
-                _bossGgRight.rectTransform.anchoredPosition = new Vector2(rightX, 0f);
+            left.gameObject.SetActive(true);
+            right.gameObject.SetActive(true);
+            main.gameObject.SetActive(true);
 
-                Color lc = Color.white;
-                lc.a = appear * fade;
-                _bossGgPrefix.color = lc;
-                _bossGgRight.color = lc;
-            }
+            left.rectTransform.anchoredPosition = new Vector2(startX + leftW * 0.5f + jitterX, groupY + jitterY);
+            right.rectTransform.anchoredPosition = new Vector2(startX + leftW + gap * 2f + numW + rightW * 0.5f + jitterX, groupY + jitterY);
+            main.rectTransform.anchoredPosition = new Vector2(startX + leftW + gap + numW * 0.5f + jitterX * 0.6f, numY + jitterY);
 
-            // 白闪（正文落地瞬间）
+            Color groupColor = Color.white;
+            groupColor.a = groupT * fade;
+
+            Color numberColor = Color.white;
+            numberColor.a = Mathf.Clamp01(rise * 2.6f) * fade;
+
+            left.color = groupColor;
+            right.color = groupColor;
+            main.color = numberColor;
+
+            // 白闪（数字落定）
             if (_bossFlash != null)
             {
                 float flash = 0f;
-                if (t > land - 0.02f && t < land + 0.16f) flash = 0.65f * Mathf.Clamp01(glitchMul);
+                if (t > land - 0.02f && t < land + 0.15f) flash = 0.6f * Mathf.Clamp01(glitchMul);
                 Color fc = _bossFlash.color;
                 fc.a = flash * fade;
                 _bossFlash.color = fc;
             }
 
-            // 故障：只在落定后两次，不循环
+            // 故障：落定后两次，不循环
             bool burst = false;
             int times = Mathf.Clamp(Mathf.RoundToInt(2 * glitchMul), 0, 2);
-            float[] moments = new float[] { land + 0.45f, land + 1.55f };
+            float[] moments = new float[] { land + 0.42f, land + 1.45f };
             for (int i = 0; i < times; i++)
             {
                 if (t >= moments[i] && t < moments[i] + 0.11f) { burst = true; break; }
             }
 
-            if (main != null && _bossGlitchTextA != null && _bossGlitchTextB != null)
+            if (_bossGlitchTextA != null && _bossGlitchTextB != null)
             {
                 if (burst)
                 {
@@ -853,8 +858,8 @@ namespace PhigrosLoading
                     _bossGlitchTextB.text = main.text;
                     _bossGlitchTextA.gameObject.SetActive(true);
                     _bossGlitchTextB.gameObject.SetActive(true);
-                    _bossGlitchTextA.fontSize = main.fontSize;
-                    _bossGlitchTextB.fontSize = main.fontSize;
+                    _bossGlitchTextA.fontSize = fs;
+                    _bossGlitchTextB.fontSize = fs;
                     _bossGlitchTextA.rectTransform.anchoredPosition = main.rectTransform.anchoredPosition + new Vector2(-off, 0f);
                     _bossGlitchTextB.rectTransform.anchoredPosition = main.rectTransform.anchoredPosition + new Vector2(off, 0f);
                     _bossGlitchTextA.color = new Color(1f, 0.25f, 0.35f, 0.30f * fade);

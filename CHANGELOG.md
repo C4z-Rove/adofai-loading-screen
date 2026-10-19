@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.7.1
+- GG intro uses ASCII brackets: one row `<Lv.XX>` — `<Lv.` and `>` appear as one group, the digits rise on
+  their own and the brackets spread apart on impact.
+
 ## 2.7.0
 - **TUF / GG switch** for the boss intro (`BossRatingSource`). GG renders a single row `《Lv.XX》`:`n  the number rises from below, the book-title marks spread open on impact (white flash + shake + two`n  glitch ghosts), single digits are zero-padded (`Lv.07`). GG falls back to TUF when AutoRating has`n  no cached value.
 
