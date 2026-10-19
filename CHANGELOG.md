@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.2
+- Fix: the judge buttons in the rating window were declared but never actually built, so the
+  selector was invisible and judgments could not be set manually. The row (Wide / Normal /
+  Strict / None) is now rendered below the icon grid.
+
 ## 2.3.1
 - The judgment used for a clear is now **recorded automatically** when a level is finished
   (`States.Won`), read from `GCS.difficulty` (Lenient / Normal / Strict). The game does not store

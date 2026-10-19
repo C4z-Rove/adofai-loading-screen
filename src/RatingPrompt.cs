@@ -350,6 +350,41 @@ namespace PhigrosLoading
             UiKit.Anchor(currentLabelRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-180f, -62f), new Vector2(420f, 44f));
             _currentLabel = UiKit.Text(currentLabelRect, "", 26, new Color(1f, 1f, 1f, 0.85f), TextAnchor.MiddleRight);
 
+        // 判定区间（宽判 / 标判 / 严判 / 无）
+        RectTransform judgeLabelRect = UiKit.Rect("JudgeLabel", _panel);
+        UiKit.Anchor(judgeLabelRect, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(48f, 100f), new Vector2(110f, 40f));
+        Text judgeLabel = UiKit.Text(judgeLabelRect, Lang.T("判定", "Judge"), 22, new Color(1f, 1f, 1f, 0.55f), TextAnchor.MiddleLeft);
+        judgeLabel.raycastTarget = false;
+
+        string[] judgeValues = new string[] { "wide", "normal", "strict", "" };
+        string[] judgeZh = new string[] { "宽判", "标判", "严判", "无" };
+        string[] judgeEn = new string[] { "Wide", "Normal", "Strict", "None" };
+        for (int i = 0; i < judgeValues.Length; i++)
+        {
+            string capturedJudge = judgeValues[i];
+            RectTransform judgeRect = UiKit.Rect("Judge_" + i, _panel);
+            UiKit.Anchor(judgeRect, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(166f + i * 120f, 100f), new Vector2(112f, 40f));
+
+            Image judgeBg = UiKit.Image(judgeRect, CellColor, UiKit.MakeRounded(64, 20, Color.white));
+            judgeBg.type = Image.Type.Sliced;
+            judgeBg.raycastTarget = true;
+
+            Button judgeButton = judgeRect.gameObject.AddComponent<Button>();
+            judgeButton.targetGraphic = judgeBg;
+            judgeButton.onClick.AddListener(delegate
+            {
+                _judge = capturedJudge;
+                RefreshJudge();
+            });
+
+            RectTransform judgeTextRect = UiKit.Rect("Label", judgeRect);
+            UiKit.Stretch(judgeTextRect);
+            Text judgeText = UiKit.Text(judgeTextRect, Lang.T(judgeZh[i], judgeEn[i]), 20, Color.white, TextAnchor.MiddleCenter);
+            judgeText.raycastTarget = false;
+
+            _judgeButtons[capturedJudge] = judgeBg;
+        }
+
             // 关闭
             RectTransform closeRect = UiKit.Rect("Close", _panel);
             UiKit.Anchor(closeRect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -10f), new Vector2(52f, 52f));
