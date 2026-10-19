@@ -43,6 +43,11 @@ Adofai Loading Screen  ——  冰与火之舞 (A Dance of Fire and Ice) Mod
        大小 / 水平偏移 / 垂直偏移都能在 UMM 面板里调
        （ClsJudgeScale / ClsJudgeOffsetX / ClsJudgeOffsetY）
 
+   判定：以「评级窗里手选」为准（默认）。
+     退出关卡时会弹评级窗，左下角 Judge 一行选 宽判/标判/严判/无，保存即生效。
+     配置项 RecordJudge 默认关；打开后通关时还会自动把当时的判定记下来。
+     图标对应 Marks\wide.png / normal.png / strict.png。
+
    判定数据从哪来（重要）：
      游戏的「宽判/标判/严判」是**全局设置**（GCS.difficulty = Lenient/Normal/Strict），
      并不存在谱面文件里，所以「这张谱面通关时用的判定」只能由本 Mod 自己记录：
