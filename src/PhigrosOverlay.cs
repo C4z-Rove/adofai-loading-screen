@@ -91,9 +91,36 @@ namespace PhigrosLoading
             _instance.ApplyInfo(info);
         }
 
+        /// <summary>销毁场景里所有残留的 overlay 对象（含孤儿）。</summary>
+        public static void PurgeStaleOverlays()
+        {
+            try
+            {
+                PhigrosOverlay[] all = Resources.FindObjectsOfTypeAll<PhigrosOverlay>();
+                int killed = 0;
+                foreach (PhigrosOverlay o in all)
+                {
+                    if (o == null) continue;
+                    if (!o.gameObject.scene.IsValid()) continue;
+                    killed++;
+                    UnityEngine.Object.DestroyImmediate(o.gameObject);
+                }
+                _instance = null;
+                if (killed > 0) Main.Info("purged " + killed + " stale overlay(s)");
+            }
+            catch (Exception e)
+            {
+                Main.Error(e);
+            }
+        }
+
         private static void Ensure()
         {
             if (_instance != null) return;
+
+            // UMM 重载/热重载会留下 DontDestroyOnLoad 的旧 overlay（静态引用丢了、对象还在），
+            // 那些孤儿 canvas 会一直把动画留在屏幕上。这里统一清掉。
+            PurgeStaleOverlays();
             try
             {
                 GameObject go = new GameObject("PhigrosLoadingOverlay", typeof(RectTransform));
@@ -123,6 +150,12 @@ namespace PhigrosLoading
         }
 
         /// <summary>退出时用纯淡出（黑幕淡入 → 新场景淡出）还是原来的曲图过渡。</summary>
+        /// <summary>退出时是否走纯淡出（给 Hooks 判断）。</summary>
+        public static bool ShouldFadeExit()
+        {
+            return UseFadeExit();
+        }
+
         private static bool UseFadeExit()
         {
             Settings cfg = Main.Config;
@@ -176,9 +209,17 @@ namespace PhigrosLoading
             ApplyExitFade(exitFade);
             if (exitFade) _minDuration = 0.18f;
 
+            if (info.IsExit && _anim != null)
+            {
+                _anim.ForceHide();
+            }
+
             // 先按这张谱面设置好动画素材，才能算准演出时长
             if (_anim != null)
             {
+                // 样式可能刚在 UMM 里改过，这里同步一次
+                _anim.SetStyle(Main.Config != null ? Main.Config.AnimStyle : LoadingAnim.StyleSweep);
+
                 string ggText = info.GGText;
                 if (string.IsNullOrEmpty(ggText) && Main.Config != null
                     && string.Equals(Main.Config.BossRatingSource, "gg", StringComparison.OrdinalIgnoreCase))
@@ -201,6 +242,7 @@ namespace PhigrosLoading
 
             gameObject.SetActive(true);
             transform.SetAsLastSibling();
+            Main.Info("overlay SHOWN: exit=" + info.IsExit + " style=" + (Main.Config != null ? Main.Config.AnimStyle : "?") + " min=" + _minDuration.ToString("0.00"));
 
             _screenW = Screen.width;
             _screenH = Screen.height;
@@ -208,6 +250,23 @@ namespace PhigrosLoading
             FitCover();
             ApplyBar(0f);
             Main.Info("loading screen shown (min " + _minDuration.ToString("0.00") + "s, exit=" + info.IsExit + ")");
+        }
+
+        /// <summary>调试：返回当前 overlay / 动画状态。</summary>
+        public static string DebugState()
+        {
+            try
+            {
+                if (_instance == null) return "overlay=null";
+                PhigrosOverlay o = _instance;
+                string s = "active=" + o.gameObject.activeSelf + " alpha=" + (o._group != null ? o._group.alpha.ToString("0.00") : "-");
+                s += " anim=" + (o._anim != null ? o._anim.DebugState() : "-");
+                return s;
+            }
+            catch (Exception e)
+            {
+                return "err " + e.Message;
+            }
         }
 
         private void ApplyInfo(LoadingInfo info)

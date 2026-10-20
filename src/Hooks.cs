@@ -12,6 +12,7 @@ namespace PhigrosLoading
     internal static class Patch_LoadSceneWithTransition
     {
         private static bool _intercepting;
+        private static bool _pendingExit;
         private static MethodInfo _original;
 
         private static bool Prefix(scrLoader __instance, WipeDirection direction, string scene)
@@ -19,6 +20,9 @@ namespace PhigrosLoading
             try
             {
                 // 复刻原方法开头的行为，后面真正调用时也会再执行一次
+                // scene == null 且当前在关卡里 = 退出；进关/重开会显式传 "scnGame"
+                _pendingExit = scene == null && ADOBase.isScnGame;
+
                 if (scene != null) GCS.sceneToLoad = scene;
 
                 // 弹窗打开期间的任何再次触发都吞掉
@@ -83,6 +87,17 @@ namespace PhigrosLoading
                     return;
                 }
 
+                if (_pendingExit)
+                {
+                    _pendingExit = false;
+
+                    BossStage.Disconnect();
+                    PhigrosOverlay.HideImmediate();
+
+                    if (PhigrosOverlay.ShouldFadeExit()) ExitFade.Play();
+                    return;
+                }
+
                 LoadingInfo info = LoadingInfo.Create();
                 if (info == null)
                 {
@@ -92,6 +107,34 @@ namespace PhigrosLoading
                 }
 
                 Main.Info("loading screen for: " + info.Key + " | " + info.Title + " - " + info.Artist + " | mark " + info.Mark);
+                if (info.IsExit)
+                {
+                    // 退出：先掐掉进关演出，再走纯淡出
+                    BossStage.Disconnect();
+                    PhigrosOverlay.HideImmediate();
+
+                    if (PhigrosOverlay.ShouldFadeExit())
+                    {
+                        ExitFade.Play();
+                        return;
+                    }
+                }
+
+                // 进关：boss 样式用独立的演出 canvas，播完自毁
+                if (!info.IsExit && Main.Config != null
+                    && string.Equals(Main.Config.AnimStyle, LoadingAnim.StyleBoss, StringComparison.OrdinalIgnoreCase))
+                {
+                    string ggText = info.GGText;
+                    if (string.IsNullOrEmpty(ggText)
+                        && string.Equals(Main.Config.BossRatingSource, "gg", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ggText = AutoRatingBridge.GetCachedGG(info.LevelPath);
+                    }
+
+                    BossStage.Play(info.Mark, ggText);
+                    return;
+                }
+
                 PhigrosOverlay.Show(info);
             }
             catch (Exception e)

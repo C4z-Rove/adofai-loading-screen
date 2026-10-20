@@ -12,6 +12,24 @@ namespace PhigrosLoading
     {
         private IEnumerator Start()
         {
+            // 调试：PreviewMark = "exit:" 时直接模拟一次退出转场
+            if (Main.Config != null && Main.Config.PreviewMark != null && Main.Config.PreviewMark.StartsWith("exit:"))
+            {
+                yield return new WaitForSecondsRealtime(3f);
+
+                LoadingInfo exitInfo = new LoadingInfo();
+                exitInfo.Key = "PreviewExit";
+                exitInfo.IsExit = true;
+                exitInfo.Title = "exit test";
+                PhigrosOverlay.Show(exitInfo);
+
+                yield return new WaitForSecondsRealtime(0.25f);
+                Main.Info("exit-test: " + PhigrosOverlay.DebugState());
+                yield return new WaitForSecondsRealtime(1.0f);
+                Main.Info("exit-test later: " + PhigrosOverlay.DebugState());
+                yield break;
+            }
+
             yield return new WaitForSecondsRealtime(2f);
 
             InGameBadge.Preview("P19", "Adofai Loading Screen");

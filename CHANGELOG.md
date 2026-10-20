@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.1.2
+- **New UMM settings UI** (modelled after Iridium): 5 tabs (General / Loading screen / Animation / Boss / About),
+  collapsible sections, dark cards with the mod accent colour, sliders showing their live value.
+- Animation style changes in the UMM panel now apply on the next level (previously only `boss` did).
+
+## 3.1.1
+- Exit animation made punchier: 10 bars close in 0.22 s with ±26 px tearing, red + blue sweep lines,
+  a white flash and a 3% zoom punch.
+- Animation style is re-synced from the config on every show.
+
+## 3.1.0
+- **Dedicated exit animation**: the screen is closed by staggered black bars with digital tearing, then fades
+  into the level select. Runs on its own throw-away canvas.
+
+## 3.0.3
+- Fix: exiting a level was detected through `GCS.sceneToLoad`, which still held `"scnGame"` from the entry,
+  so the exit was treated as an entry and the boss intro replayed on the way out. Exit is now detected from
+  the call signature (`scene == null` while inside a level).
+
+## 3.0.0 - 3.0.2
+- Boss intro moved to a standalone, throw-away canvas (`BossStage`); it no longer shares any object with the
+  loading screen and is destroyed when it ends or when the level is exited.
+- Boss stage fades out at the end (fade into the chart restored).
 ## 2.8.6
 - Remove the temporary exit-path instrumentation. 2.8.5 behaviour confirmed: on the exit transition the boss
   animation is no longer ticked (`boss tick` log only appears for level entry).

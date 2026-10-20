@@ -47,6 +47,7 @@ namespace PhigrosLoading
 
         // boss 动画
         private RectTransform _bossRoot;
+        private RectTransform _bossParent;
         private CanvasGroup _bossGroup;
         private Image _bossBlack;
         private Image _bossLetter;
@@ -184,8 +185,17 @@ namespace PhigrosLoading
         }
 
         /// <summary>boss 动画：黑屏 → 字母 → 数字从下方升起 → 故障 → 淡出。</summary>
+        private void EnsureBoss()
+        {
+            if (_bossRoot != null) return;
+            if (_bossParent == null) return;
+            BuildBoss(_bossParent);
+            _bossRoot.gameObject.SetActive(false);
+        }
+
         private void BuildBoss(RectTransform parent)
         {
+            _bossParent = parent;
             _bossRoot = UiKit.Rect("BossRoot", parent);
             _bossRoot.anchorMin = Vector2.zero;
             _bossRoot.anchorMax = Vector2.one;
@@ -309,6 +319,7 @@ namespace PhigrosLoading
         /// <summary>设置 boss 演出显示什么：GG 有值时用纯文字 Lv.XX，否则用 TUF 图标。</summary>
         public void SetRating(string mark, string gg)
         {
+            EnsureBoss();
             _bossGgMode = !string.IsNullOrEmpty(gg);
             _bossGgValue = _bossGgMode ? FormatGG(gg) : "";
             SetMark(mark);
@@ -428,6 +439,54 @@ namespace PhigrosLoading
             _time = 0f;
         }
 
+        /// <summary>强制收起所有元素（退出转场时用，保证一个都不留）。</summary>
+        /// <summary>调试用状态串。</summary>
+        public string DebugState()
+        {
+            string s = "visible=" + _visible + " style=" + _style + " gg=" + _bossGgMode;
+            s += " bossRoot=" + (_bossRoot != null ? (_bossRoot.gameObject.activeSelf ? "ON" : "off") : "null");
+            if (_bossRoot != null) s += " grpAlpha=" + (_bossGroup != null ? _bossGroup.alpha.ToString("0.00") : "-");
+            if (_bossGgPrefix != null) s += " ggL=" + (_bossGgPrefix.gameObject.activeSelf ? "ON" : "off") + "/" + _bossGgPrefix.color.a.ToString("0.00");
+            if (_bossGgRight != null) s += " ggR=" + (_bossGgRight.gameObject.activeSelf ? "ON" : "off") + "/" + _bossGgRight.color.a.ToString("0.00");
+            if (_bossDigits[0] != null) s += " d0=" + (_bossDigits[0].gameObject.activeSelf ? "ON" : "off");
+            return s;
+        }
+
+        public void ForceHide()
+        {
+            _visible = false;
+
+            if (_track != null) _track.gameObject.SetActive(false);
+            if (_center != null) _center.gameObject.SetActive(false);
+
+            // 直接销毁 boss 根节点，避免任何残留
+            if (_bossRoot != null)
+            {
+                UnityEngine.Object.Destroy(_bossRoot.gameObject);
+            }
+
+            _bossRoot = null;
+            _bossGroup = null;
+            _bossBlack = null;
+            _bossLetter = null;
+            _bossGlitchA = null;
+            _bossGlitchB = null;
+            _bossFlash = null;
+            _bossWave = null;
+            _bossSpinRing = null;
+            _bossGgPrefix = null;
+            _bossGgRight = null;
+            _bossGlitchTextA = null;
+            _bossGlitchTextB = null;
+            _bossDigits[0] = null;
+            _bossDigits[1] = null;
+            _bossMark = null;
+            _bossLetterSprite = null;
+            _bossGgMode = false;
+            _bossGgValue = "";
+            _bossTime = 0f;
+        }
+
         public void SetVisible(bool visible)
         {
             _visible = visible;
@@ -438,6 +497,8 @@ namespace PhigrosLoading
                 if (_center != null) _center.gameObject.SetActive(false);
                 return;
             }
+
+            if (_style == StyleBoss) EnsureBoss();
 
             if (_bossRoot != null)
             {
