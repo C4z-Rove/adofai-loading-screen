@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.6
+- Remove the temporary exit-path instrumentation. 2.8.5 behaviour confirmed: on the exit transition the boss
+  animation is no longer ticked (`boss tick` log only appears for level entry).
+
 ## 2.8.5
 - Fix: on the exit transition the boss animation was re-activated every frame (Tick forced the boss root
   back on), so it played behind the pure-fade exit. The animation now stays hidden while the overlay is
