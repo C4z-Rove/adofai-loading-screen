@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.8.5
+- Fix: on the exit transition the boss animation was re-activated every frame (Tick forced the boss root
+  back on), so it played behind the pure-fade exit. The animation now stays hidden while the overlay is
+  in exit mode.
+
 ## 2.8.4
 - Fix: in TUF mode the second digit text was force-hidden, so two-digit ratings lost their ones digit.
   Digit visibility now follows the value length instead of the rating source.

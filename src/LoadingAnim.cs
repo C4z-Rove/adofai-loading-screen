@@ -69,6 +69,7 @@ namespace PhigrosLoading
         private Image _bossWave;
         private Image _bossSpinRing;
 
+        private bool _visible = true;
         private string _style = StyleSweep;
         private float _time;
 
@@ -429,6 +430,15 @@ namespace PhigrosLoading
 
         public void SetVisible(bool visible)
         {
+            _visible = visible;
+            if (!visible)
+            {
+                if (_bossRoot != null) _bossRoot.gameObject.SetActive(false);
+                if (_track != null) _track.gameObject.SetActive(false);
+                if (_center != null) _center.gameObject.SetActive(false);
+                return;
+            }
+
             if (_bossRoot != null)
             {
                 bool show = visible && _style == StyleBoss;
@@ -455,6 +465,8 @@ namespace PhigrosLoading
         // ------------------------------------------------------------------
         public void Tick(float progress, float dt, Settings cfg)
         {
+            if (!_visible) return;
+
             _time += dt;
             float p = Mathf.Clamp01(progress);
 

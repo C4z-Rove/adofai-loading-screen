@@ -48,7 +48,7 @@ namespace PhigrosLoading
                 // 让加载动画在窗口失焦/后台时也继续跑
                 Application.runInBackground = true;
 
-                Log.Log("Adofai Loading Screen v2.8.4 loaded. ModPath = " + ModPath);
+                Log.Log("Adofai Loading Screen v2.8.5 loaded. ModPath = " + ModPath);
                 return true;
             }
             catch (Exception e)
