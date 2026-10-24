@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.5.4
+- **Chart FX rating (T tiers)** shown in the CLS panel, bottom-right of the difficulty badge: parses the
+  `.adofai` file and weights visual events (Flash / Bloom 1.5, filters 1.2, decorations 1.0, camera and
+  particles 0.8, decoration moves 0.4, track moves 0.3, track animations 0.2).
+  `T4` is reserved for full-VFX charts (`Megamix2026 - Full VFX` scores 4394; the cut is 3000), `T3` >= 600,
+  `T2` >= 120, `H` variants for charts denser than 1.5 visual events per tile. Tiers fall back to a lower
+  icon when a variant is missing, so a badge never turns into *Unranked*.
+- FX badge fades in like the mark/judge badges and resets when the selected level changes.
+
+## 3.4.x
+- GG slot machine rewritten: five vertical reels (per-digit cells, so no blank bands), digits scroll **upwards**,
+  25 -> 24000 px/s with a slow 4.4 s crawl first.
+- The rating's two digits sit in slots 3 and 4; the other three slide in much later (5.55 s) while the pair glides
+  into place over 3 s.
+- The reel window starts as a thin slit and opens late (4.6 s -> 7.6 s); digits are bold and 380 px.
+- Full-screen glitch slices (red / blue / white bars) during the last part of the acceleration, then the CRT
+  switch-off (squash to a line, then to a dot) and straight into the chart.
+- Boss intro locks chart input while it plays (`LockInputDuringIntro`).
+
+## 3.2.x - 3.3.x
+- GG intro: glow layer + motion-blur trails on the rising digits, slot-machine roll toggle.
+- Exit animation: ten black bars close in 0.22 s with ±26 px tearing, red/blue sweep lines, white flash and a
+  small zoom punch, on its own throw-away canvas.
+- Boss intro moved to a standalone `BossStage` canvas that is destroyed when it ends or when the level is
+  exited, fixing the intro replaying on exit.
 ## 3.1.2
 - **New UMM settings UI** (modelled after Iridium): 5 tabs (General / Loading screen / Animation / Boss / About),
   collapsible sections, dark cards with the mod accent colour, sliders showing their live value.

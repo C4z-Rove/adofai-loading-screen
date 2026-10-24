@@ -61,9 +61,25 @@ namespace PhigrosLoading
         private string _bossGgValue = "";
         private Text _bossGgPrefix;
         private Text _bossGgRight;
+        private Text _bossGlow;
+        private Text _bossTrailA;
+        private Text _bossTrailB;
+        private RectTransform _rollRoot;
+        private RectTransform _reelRoot;
+        private readonly Text[,] _reelCell = new Text[5, 5];
+        private readonly RectTransform[] _glitchBars = new RectTransform[4];
+        private readonly Image[] _glitchImgs = new Image[4];
+        private readonly RectTransform[] _reelCol = new RectTransform[5];
+        private readonly Text[] _reelText = new Text[5];
+        private readonly float[] _reelOffset = new float[5];
+        private float _reelCycle = 3000f;
+        private bool _reelSeeded;
+        private int _reelFont = 380;
         private string _bossDigitsValue = "";
         private Sprite _bossLetterSprite;
         private float _bossTime;
+        private float _bossRollTick;
+        private string _bossRollValue = "";
 
         private BossKind _bossKind = BossKind.Classic;
         private Image _bossFlash;
@@ -244,6 +260,65 @@ namespace PhigrosLoading
             _bossGgRight.fontSize = 300;
             _bossGgRight.gameObject.SetActive(false);
 
+            // 五位老虎机：每列 5 个数字格，按位置动态换字，滚动无缝
+            RectTransform reelRoot = UiKit.Rect("ReelRoot", _bossRoot);
+            reelRoot.anchorMin = reelRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            reelRoot.pivot = new Vector2(0.5f, 0.5f);
+            reelRoot.sizeDelta = new Vector2(1900f, 420f);
+            reelRoot.anchoredPosition = Vector2.zero;
+            _reelRoot = reelRoot;
+
+            for (int i = 0; i < 5; i++)
+            {
+                RectTransform col = UiKit.Rect("ReelCol" + i, reelRoot);
+                col.anchorMin = col.anchorMax = new Vector2(0.5f, 0.5f);
+                col.pivot = new Vector2(0.5f, 0.5f);
+                col.sizeDelta = new Vector2(400f, 900f);
+                col.anchoredPosition = new Vector2((i - 2) * 385f, 0f);
+                col.gameObject.AddComponent<RectMask2D>();
+                _reelCol[i] = col;
+
+                for (int k = 0; k < 5; k++)
+                {
+                    Text cell = MakeBossText("Cell" + i + "_" + k, Color.white);
+                    cell.rectTransform.SetParent(col, false);
+                    cell.rectTransform.anchorMin = cell.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                    cell.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                    cell.rectTransform.sizeDelta = new Vector2(400f, 400f);
+                    cell.rectTransform.anchoredPosition = Vector2.zero;
+                    cell.fontSize = 380;
+                    cell.fontStyle = FontStyle.Bold;
+                    cell.alignment = TextAnchor.MiddleCenter;
+                    cell.verticalOverflow = VerticalWrapMode.Overflow;
+                    cell.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    cell.text = "0";
+                    cell.gameObject.SetActive(false);
+                    _reelCell[i, k] = cell;
+                }
+            }
+
+            // 故障条（全屏横向切片）
+            for (int i = 0; i < 4; i++)
+            {
+                GameObject barGo = new GameObject("GlitchBar" + i, typeof(RectTransform));
+                RectTransform bar = (RectTransform)barGo.transform;
+                bar.SetParent(_bossRoot, false);
+                bar.anchorMin = new Vector2(0f, 0.5f);
+                bar.anchorMax = new Vector2(1f, 0.5f);
+                bar.pivot = new Vector2(0.5f, 0.5f);
+                bar.sizeDelta = new Vector2(0f, 20f);
+                Image img = barGo.AddComponent<Image>();
+                img.color = new Color(1f, 1f, 1f, 0f);
+                img.raycastTarget = false;
+                _glitchBars[i] = bar;
+                _glitchImgs[i] = img;
+                barGo.transform.SetSiblingIndex(0);
+            }
+
+            _bossGlow = MakeBossText("Glow", new Color(1f, 1f, 1f, 0f));
+            _bossTrailA = MakeBossText("TrailA", new Color(1f, 1f, 1f, 0f));
+            _bossTrailB = MakeBossText("TrailB", new Color(1f, 1f, 1f, 0f));
+
             _bossGlitchTextA = MakeBossText("GlitchTextA", new Color(1f, 0.25f, 0.35f, 0f));
             _bossGlitchTextB = MakeBossText("GlitchTextB", new Color(0.25f, 0.75f, 1f, 0f));
 
@@ -324,6 +399,13 @@ namespace PhigrosLoading
             _bossGgValue = _bossGgMode ? FormatGG(gg) : "";
             SetMark(mark);
             ApplyRatingVisibility();
+        }
+
+        private static string RandomDigits(int length)
+        {
+            string value = "";
+            for (int i = 0; i < length; i++) value += UnityEngine.Random.Range(0, 10).ToString();
+            return value;
         }
 
         private static string FormatGG(string raw)
@@ -478,6 +560,11 @@ namespace PhigrosLoading
             _bossGgRight = null;
             _bossGlitchTextA = null;
             _bossGlitchTextB = null;
+            _bossGlow = null;
+            _bossTrailA = null;
+            _bossTrailB = null;
+            _reelRoot = null;
+            for (int i = 0; i < 5; i++) { _reelText[i] = null; _reelCol[i] = null; _reelOffset[i] = 0f; }
             _bossDigits[0] = null;
             _bossDigits[1] = null;
             _bossMark = null;
@@ -804,7 +891,7 @@ namespace PhigrosLoading
         public float BossDuration(Settings cfg)
         {
             float speed = cfg != null ? Mathf.Clamp(cfg.BossSpeed, 0.4f, 2f) : 1f;
-            float duration = _bossGgMode ? 4.2f : PlanOf(_bossKind).Duration;
+            float duration = _bossGgMode ? 10.4f : PlanOf(_bossKind).Duration;
             return duration / speed;
         }
 
@@ -834,6 +921,22 @@ namespace PhigrosLoading
             }
             if (_bossGgPrefix != null && _bossGgPrefix.gameObject.activeSelf) _bossGgPrefix.gameObject.SetActive(false);
             if (_bossGgRight != null && _bossGgRight.gameObject.activeSelf) _bossGgRight.gameObject.SetActive(false);
+            if (_reelRoot != null && _reelRoot.gameObject.activeSelf) _reelRoot.gameObject.SetActive(false);
+            for (int i = 0; i < 5; i++)
+            {
+                for (int k = 0; k < 5; k++)
+                {
+                    if (_reelCell[i, k] != null && _reelCell[i, k].gameObject.activeSelf) _reelCell[i, k].gameObject.SetActive(false);
+                }
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                if (_glitchImgs[i] != null) { Color gc = _glitchImgs[i].color; gc.a = 0f; _glitchImgs[i].color = gc; }
+            }
+
+            if (_bossGlow != null && _bossGlow.gameObject.activeSelf) _bossGlow.gameObject.SetActive(false);
+            if (_bossTrailA != null && _bossTrailA.gameObject.activeSelf) _bossTrailA.gameObject.SetActive(false);
+            if (_bossTrailB != null && _bossTrailB.gameObject.activeSelf) _bossTrailB.gameObject.SetActive(false);
             if (_bossGlitchTextA != null && _bossGlitchTextA.gameObject.activeSelf) _bossGlitchTextA.gameObject.SetActive(false);
             if (_bossGlitchTextB != null && _bossGlitchTextB.gameObject.activeSelf) _bossGlitchTextB.gameObject.SetActive(false);
 
@@ -857,21 +960,23 @@ namespace PhigrosLoading
             float labelScale = cfg != null ? Mathf.Clamp(cfg.BossGgLabelSize, 0.1f, 3f) : 0.25f;
 
             float t = _bossTime * speed;
-            const float total = 4.2f;
+            const float total = 10.4f;
 
-            if (t >= total + 0.02f)
+            if (t >= total)
             {
                 HideBossContent();
                 return;
             }
 
-            float fadeOutStart = total - 0.6f;
-            float fade = t > fadeOutStart ? Mathf.Clamp01(1f - (t - fadeOutStart) / 0.6f) : 1f;
+            float H = _bossRoot != null ? _bossRoot.rect.height : 1080f;
+            float W = _bossRoot != null ? _bossRoot.rect.width : 1920f;
+            if (H <= 1f) H = 1080f;
+            if (W <= 1f) W = 1920f;
 
             if (_bossBlack != null)
             {
                 Color c = Color.black;
-                c.a = Mathf.Clamp01(t / 0.2f);
+                c.a = Mathf.Clamp01(t / 0.22f);
                 _bossBlack.color = c;
             }
 
@@ -880,176 +985,302 @@ namespace PhigrosLoading
             if (_bossGlitchA != null) _bossGlitchA.enabled = false;
             if (_bossGlitchB != null) _bossGlitchB.enabled = false;
             if (_bossWave != null) _bossWave.enabled = false;
-            float H = _bossRoot != null ? _bossRoot.rect.height : 1080f;
-            float W = _bossRoot != null ? _bossRoot.rect.width : 1920f;
-            if (H <= 1f) H = 1080f;
-            if (W <= 1f) W = 1920f;
 
-            Text left = _bossGgPrefix;
-            Text right = _bossGgRight;
-            Text main = _bossDigits[0];
-            if (left == null || right == null || main == null) return;
+            if (_bossGgPrefix == null || _bossGgRight == null || _bossDigits[0] == null) return;
 
-            // 字号：数字大、括号小
             int labelFont = Mathf.Max(12, Mathf.RoundToInt(250f * sizeMul * labelScale));
             int numberFont = Mathf.Max(24, Mathf.RoundToInt(250f * sizeMul * numScale));
 
-            left.fontSize = labelFont;
-            right.fontSize = labelFont;
-            main.fontSize = numberFont;
-            main.text = _bossGgValue;
-            left.text = "<Lv.";
-            right.text = ">";
+            // ---------------- 时间轴 ----------------
+            const float RiseStart = 0.22f;
+            const float RiseEnd = 0.72f;
+            const float HoldEnd = 1.60f;
+            const float MorphEnd = 2.00f;      // 数字 → 卷轴 的过渡
+            const float JoinStart = 6.40f;     // 其它三位进入
+            const float GrowStart = 7.40f;     // 数字开始铺满全屏
+            const float BracketFade = 9.00f;    // <> 开始淡出
+            const float RollEnd = 9.10f;
+            const float GlitchStart = 9.10f;
+            const float CrtStart = 9.35f;
+            const float CrtLineEnd = 9.65f;
+            const float CrtDotEnd = 9.95f;
 
-            // 位数适配：太长就把数字缩小到屏幕 62% 宽度以内
-            float maxNumWidth = W * 0.62f;
-            float numW = main.preferredWidth;
-            if (numW > maxNumWidth && numW > 1f)
-            {
-                numberFont = Mathf.Max(24, Mathf.RoundToInt(numberFont * (maxNumWidth / numW)));
-                main.fontSize = numberFont;
-                numW = main.preferredWidth;
-            }
+            bool rolling = t >= MorphEnd && t < RollEnd;
+            bool crt = t >= CrtStart;
+            bool displayed = t < MorphEnd;      // 数字展示阶段（含上升 + 保持 + 过渡）
 
-            float labelW = left.preferredWidth;
-            float rightW = right.preferredWidth;
+            // ---------------- 数字上升 ----------------
+            float rise = Mathf.Clamp01((t - RiseStart) / (RiseEnd - RiseStart));
+            float riseEase = Ease(EaseKind.Cubic, rise);
 
-            bool split = _bossGgValue.Length == 2;
+            float morph = Mathf.Clamp01((t - HoldEnd) / (MorphEnd - HoldEnd));
+            float morphEase = Ease(EaseKind.Cubic, morph);
+
             Text tens = _bossDigits[0];
             Text ones = _bossDigits[1];
+            bool split = _bossGgValue.Length == 2;
 
-            if (tens == null) return;
-
-            // 字号：两位数字各自一个 Text
             tens.fontSize = numberFont;
+            tens.fontStyle = FontStyle.Bold;
             tens.text = split ? _bossGgValue[0].ToString() : _bossGgValue;
-            tens.gameObject.SetActive(true);
 
             if (ones != null)
             {
-                if (split)
-                {
-                    ones.fontSize = numberFont;
-                    ones.text = _bossGgValue[1].ToString();
-                    ones.gameObject.SetActive(true);
-                }
-                else
-                {
-                    ones.gameObject.SetActive(false);
-                }
+                ones.fontSize = numberFont;
+                ones.fontStyle = FontStyle.Bold;
+                ones.text = split ? _bossGgValue[1].ToString() : "";
             }
 
             float tensW = tens.preferredWidth;
             float onesW = split && ones != null ? ones.preferredWidth : 0f;
-            float digitsW = tensW + (split ? onesW : 0f);
+            float digitsW = tensW + onesW;
 
-            // 整排宽度：<Lv.  + 数字  + >
-            float closedGap = labelFont * 0.02f;
-            float openGap = labelFont * 0.30f;
+            _bossGgPrefix.fontSize = labelFont;
+            _bossGgRight.fontSize = labelFont;
+            _bossGgPrefix.fontStyle = FontStyle.Bold;
+            _bossGgRight.fontStyle = FontStyle.Bold;
+            _bossGgPrefix.text = "<Lv.";
+            _bossGgRight.text = ">";
 
-            // 数字从下方升起（0.42 ~ 1.22），括号同步张开
-            float rise = Mathf.Clamp01((t - 0.42f) / 0.80f);
-            float riseEase = Ease(EaseKind.Cubic, rise);
-
-            // 个位比十位晚一点起飞
-            float riseOnes = split ? Mathf.Clamp01((t - 0.60f) / 0.80f) : 0f;
-            float riseOnesEase = Ease(EaseKind.Cubic, riseOnes);
-
-            float gap = Mathf.Lerp(closedGap, openGap, riseEase);
-
+            float labelW = _bossGgPrefix.preferredWidth;
+            float rightW = _bossGgRight.preferredWidth;
+            float gap = labelFont * 0.30f;
             float totalW = labelW + gap * 2f + digitsW + rightW;
             float rowLeft = -totalW * 0.5f;
+            float lift = numberFont * 0.07f;
+            float labelY = lift - (numberFont - labelFont) * 0.16f;
 
-            float labelX = rowLeft + labelW * 0.5f;
-            float tensX = rowLeft + labelW + gap + tensW * 0.5f;
-            float onesX = tensX + tensW * 0.5f + onesW * 0.5f;
-            float rightX = rowLeft + labelW + gap * 2f + digitsW + rightW * 0.5f;
+            // 升起时的纵向位置
+            float digY = Mathf.Lerp(-H * 0.34f, lift, riseEase);
 
-            // 整体上移一点，视觉居中
-            float centerLift = numberFont * 0.07f;
+            bool showNumber = displayed && rise > 0.02f && morph < 0.98f;
+            tens.gameObject.SetActive(showNumber && !split);
+            tens.gameObject.SetActive(showNumber);
+            if (ones != null) ones.gameObject.SetActive(showNumber && split);
 
-            // 两位数字最终对齐到同一条水平线，只错开起飞时间
-            float tensY = Mathf.Lerp(-H * 0.34f, centerLift, riseEase);
-            float onesY = Mathf.Lerp(-H * 0.34f, centerLift, riseOnesEase);
+            float numberAlpha = (1f - morphEase) * Mathf.Clamp01(rise * 3f);
+            float shrink = Mathf.Lerp(1f, 0.88f, morphEase);
 
-            // 落地抖动
-            float land = 1.22f;
-            float shake = 0f;
-            if (t > land && t < land + 0.34f) shake = (1f - (t - land) / 0.34f) * 18f * glitchMul;
-
-            float jitterX = shake > 0f ? UnityEngine.Random.Range(-shake, shake) * 0.6f : 0f;
-            float jitterY = shake > 0f ? UnityEngine.Random.Range(-shake, shake) * 0.5f : 0f;
-
-            float labelY = centerLift - (numberFont - labelFont) * 0.16f;
-            float groupT = Mathf.Clamp01((t - 0.18f) / 0.30f);
-
-            left.gameObject.SetActive(true);
-            right.gameObject.SetActive(true);
-
-            left.rectTransform.anchoredPosition = new Vector2(labelX + jitterX, labelY + jitterY);
-            right.rectTransform.anchoredPosition = new Vector2(rightX + jitterX, labelY + jitterY);
-
-            tens.rectTransform.anchoredPosition = new Vector2(tensX + jitterX * 0.6f, tensY + jitterY);
-
-            Color labelColor = Color.white;
-            labelColor.a = groupT * fade;
-            left.color = labelColor;
-            right.color = labelColor;
-
-            Color tensColor = Color.white;
-            tensColor.a = Mathf.Clamp01(rise * 2.6f) * fade;
-            tens.color = tensColor;
+            tens.rectTransform.localScale = new Vector3(shrink, shrink, 1f);
+            tens.rectTransform.anchoredPosition = new Vector2(rowLeft + labelW + gap + tensW * 0.5f, digY);
+            tens.color = new Color(1f, 1f, 1f, numberAlpha);
 
             if (split && ones != null)
             {
-                ones.rectTransform.anchoredPosition = new Vector2(onesX + jitterX * 0.6f, onesY + jitterY);
-                Color onesColor = Color.white;
-                onesColor.a = Mathf.Clamp01(riseOnes * 2.6f) * fade;
-                ones.color = onesColor;
+                ones.rectTransform.localScale = new Vector3(shrink, shrink, 1f);
+                ones.rectTransform.anchoredPosition = new Vector2(rowLeft + labelW + gap + tensW + onesW * 0.5f, digY);
+                ones.color = new Color(1f, 1f, 1f, numberAlpha);
             }
 
-            main = tens;
+            float bracketFade = Mathf.Clamp01((t - BracketFade) / 0.35f);
+            bool showLabels = rise > 0.02f && t < MorphEnd || (t >= MorphEnd && bracketFade < 1f && rise > 0.02f);
+            _bossGgPrefix.gameObject.SetActive(showLabels);
+            _bossGgRight.gameObject.SetActive(showLabels);
 
-            // 白闪（数字落定）
-            if (_bossFlash != null)
-            {
-                float flash = 0f;
-                if (t > land + 0.04f && t < land + 0.20f) flash = 0.65f * Mathf.Clamp01(glitchMul);
-                Color fc = _bossFlash.color;
-                fc.a = flash * fade;
-                _bossFlash.color = fc;
-            }
+            float labelAlpha = (1f - bracketFade) * Mathf.Clamp01(rise * 3f);
+            _bossGgPrefix.rectTransform.anchoredPosition = new Vector2(rowLeft + labelW * 0.5f, labelY);
+            _bossGgRight.rectTransform.anchoredPosition = new Vector2(rowLeft + labelW + gap * 2f + digitsW + rightW * 0.5f, labelY);
+            _bossGgPrefix.color = new Color(1f, 1f, 1f, labelAlpha * 0.85f);
+            _bossGgRight.color = new Color(1f, 1f, 1f, labelAlpha * 0.85f);
 
-            // 故障：落定后两次，不循环
-            bool burst = false;
-            int times = Mathf.Clamp(Mathf.RoundToInt(2 * glitchMul), 0, 2);
-            float[] moments = new float[] { land + 0.42f, land + 1.45f };
-            for (int i = 0; i < times; i++)
+            // 辉光
+            if (_bossGlow != null)
             {
-                if (t >= moments[i] && t < moments[i] + 0.11f) { burst = true; break; }
-            }
-
-            if (_bossGlitchTextA != null && _bossGlitchTextB != null)
-            {
-                if (burst)
+                bool glowOn = showNumber;
+                _bossGlow.gameObject.SetActive(glowOn);
+                if (glowOn)
                 {
-                    float off = UnityEngine.Random.Range(8f, 18f);
-                    _bossGlitchTextA.text = main.text;
-                    _bossGlitchTextB.text = main.text;
-                    _bossGlitchTextA.gameObject.SetActive(true);
-                    _bossGlitchTextB.gameObject.SetActive(true);
-                    _bossGlitchTextA.fontSize = numberFont;
-                    _bossGlitchTextB.fontSize = numberFont;
-                    _bossGlitchTextA.rectTransform.anchoredPosition = main.rectTransform.anchoredPosition + new Vector2(-off, 0f);
-                    _bossGlitchTextB.rectTransform.anchoredPosition = main.rectTransform.anchoredPosition + new Vector2(off, 0f);
-                    _bossGlitchTextA.color = new Color(1f, 0.25f, 0.35f, 0.30f * fade);
-                    _bossGlitchTextB.color = new Color(0.25f, 0.75f, 1f, 0.30f * fade);
+                    _bossGlow.fontStyle = FontStyle.Bold;
+                    _bossGlow.text = tens.text;
+                    _bossGlow.fontSize = Mathf.RoundToInt(numberFont * 1.06f);
+                    _bossGlow.rectTransform.anchoredPosition = tens.rectTransform.anchoredPosition;
+                    _bossGlow.rectTransform.localScale = tens.rectTransform.localScale;
+                    _bossGlow.color = new Color(1f, 1f, 1f, 0.22f * numberAlpha);
                 }
-                else
+            }
+
+            if (_bossTrailA != null) _bossTrailA.gameObject.SetActive(false);
+            if (_bossTrailB != null) _bossTrailB.gameObject.SetActive(false);
+
+            // ---------------- 卷轴 ----------------
+            if (_reelRoot != null)
+            {
+                bool reelVisible = t >= HoldEnd && !crt;
+                _reelRoot.gameObject.SetActive(reelVisible);
+
+                if (reelVisible)
                 {
-                    _bossGlitchTextA.gameObject.SetActive(false);
-                    _bossGlitchTextB.gameObject.SetActive(false);
+                    bool twoDigits = _bossGgValue.Length >= 2;
+                    int slotA = 2;
+                    int slotB = twoDigits ? 3 : 2;
+                    const float spacing = 360f;
+
+                    if (!_reelSeeded)
+                    {
+                        _reelSeeded = true;
+                        int dLast = _bossGgValue.Length > 0 ? (_bossGgValue[_bossGgValue.Length - 1] - '0') : 0;
+                        int dPrev = _bossGgValue.Length > 1 ? (_bossGgValue[_bossGgValue.Length - 2] - '0') : 0;
+                        _reelOffset[slotB] = (dLast + 2) * spacing;
+                        _reelOffset[slotA] = ((twoDigits ? dPrev : 0) + 2) * spacing;
+                        for (int k = 0; k < 5; k++)
+                        {
+                            if (k != slotA && k != slotB) _reelOffset[k] = spacing * UnityEngine.Random.Range(0, 10);
+                        }
+                    }
+
+                    float pitch = 385f;
+                    float rollProgress = Mathf.Clamp01((t - MorphEnd) / (RollEnd - MorphEnd));
+
+                    float inT = Mathf.Clamp01((t - HoldEnd) / (MorphEnd - HoldEnd));
+                    float inEase = Ease(EaseKind.Cubic, inT);
+
+                    float join = Mathf.Clamp01((t - JoinStart) / 1.00f);
+                    float joinEase = Ease(EaseKind.Cubic, join);
+
+                    float centerOffset = twoDigits ? -0.5f : 0f;
+                    float recenter = Mathf.Clamp01((t - 4.60f) / 3.00f);
+                    // smoothstep 两边都平缓，看起来像"慢慢滑过去"
+                    float recenterEase = recenter * recenter * (3f - 2f * recenter);
+                    float rootX = Mathf.Lerp(centerOffset * pitch, 0f, recenterEase);
+                    _reelRoot.anchoredPosition = new Vector2(rootX, 0f);
+
+                    float growT = Mathf.Clamp01((t - GrowStart) / 2.2f);
+                    float growEase = Ease(EaseKind.Cubic, growT);
+                    float reelScale = Mathf.Lerp(Mathf.Lerp(0.9f, 1f, inEase), 1.15f, growEase);
+                    _reelRoot.localScale = new Vector3(reelScale, reelScale, 1f);
+
+                    float scrollSpeed = Mathf.Lerp(25f, 24000f, Mathf.Pow(rollProgress, 3.2f));
+
+                    for (int i = 0; i < 5; i++)
+                    {
+                        RectTransform col = _reelCol[i];
+                        if (col == null) continue;
+
+                        bool ratingSlot = i == slotA || i == slotB;
+                        bool present = ratingSlot || (join > 0.01f);
+
+                        if (col.gameObject.activeSelf != present) col.gameObject.SetActive(present);
+                        if (!present) continue;
+
+                        // 遮罩从宽到窄：开始时能看到上下几个数字，后面收成一行
+                        float winT = Mathf.Clamp01((t - 4.60f) / 3.00f);
+                        float winH = Mathf.Lerp(380f, 780f, Ease(EaseKind.Cubic, winT));
+                        Vector2 sz = col.sizeDelta;
+                        if (Mathf.Abs(sz.y - winH) > 0.5f) col.sizeDelta = new Vector2(sz.x, winH);
+
+                        float speedFactor = ratingSlot ? Mathf.Lerp(0f, 1f, inEase) : 1f;
+                        _reelOffset[i] += scrollSpeed * dt * speedFactor * (1f + i * 0.05f);
+
+                        float pos = _reelOffset[i] / spacing;
+                        int baseIndex = Mathf.FloorToInt(pos);
+                        float frac = pos - baseIndex;
+
+                        float slide = ratingSlot ? 0f : -(1f - joinEase) * 1100f;
+                        float alpha = ratingSlot ? inEase : joinEase;
+                        float blur = Mathf.Clamp01((scrollSpeed - 3000f) / 12000f);
+
+                        for (int k = 0; k < 5; k++)
+                        {
+                            Text cell = _reelCell[i, k];
+                            if (cell == null) continue;
+
+                            if (!cell.gameObject.activeSelf) cell.gameObject.SetActive(true);
+
+                            int digit = ((baseIndex - k) % 10 + 10) % 10;
+                            cell.text = digit.ToString();
+                            cell.fontSize = 380;
+                            cell.fontStyle = FontStyle.Bold;
+
+                            float y = (k - 2f + frac) * spacing;
+                            cell.rectTransform.anchoredPosition = new Vector2(slide, y);
+                            cell.color = new Color(1f, 1f, 1f, alpha * (1f - blur * 0.25f) + blur * 0.25f);
+                        }
+                    }
                 }
+            }
+
+            // ---------------- 故障 ----------------
+            // 加速末段就开始偶发，正式故障段高强度闪烁，并延续到电视关机前
+            bool glitchPhase = t >= (GlitchStart - 1.60f) && t < CrtStart;
+
+            if (glitchPhase)
+            {
+                float intensity = t >= GlitchStart ? 1f : Mathf.InverseLerp(GlitchStart - 1.60f, GlitchStart, t) * 0.6f;
+
+                for (int i = 0; i < 4; i++)
+                {
+                    Image img = _glitchImgs[i];
+                    RectTransform bar = _glitchBars[i];
+                    if (img == null || bar == null) continue;
+
+                    bool on = UnityEngine.Random.value < (t >= GlitchStart ? 0.85f : 0.22f) * Mathf.Clamp01(glitchMul);
+
+                    if (on)
+                    {
+                        float height = UnityEngine.Random.Range(8f, 26f + 120f * intensity);
+                        bar.sizeDelta = new Vector2(0f, height);
+                        bar.anchoredPosition = new Vector2(UnityEngine.Random.Range(-26f, 26f), UnityEngine.Random.Range(-H * 0.45f, H * 0.45f));
+
+                        float pick = UnityEngine.Random.value;
+                        Color c;
+                        if (pick < 0.34f) c = new Color(1f, 0.25f, 0.35f, 0.55f);
+                        else if (pick < 0.68f) c = new Color(0.25f, 0.75f, 1f, 0.55f);
+                        else c = new Color(1f, 1f, 1f, 0.35f);
+
+                        c.a *= Mathf.Clamp01(0.4f + glitchMul * 0.5f);
+                        img.color = c;
+                    }
+                    else
+                    {
+                        Color c = img.color;
+                        c.a = 0f;
+                        img.color = c;
+                    }
+                }
+
+                // 数字横向抖动
+                if (_reelRoot != null)
+                {
+                    float amp = (t >= GlitchStart ? 26f : 8f) * Mathf.Clamp01(glitchMul);
+                    _reelRoot.anchoredPosition += new Vector2(UnityEngine.Random.Range(-amp, amp), 0f);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    if (_glitchImgs[i] != null)
+                    {
+                        Color c = _glitchImgs[i].color;
+                        c.a = 0f;
+                        _glitchImgs[i].color = c;
+                    }
+                }
+            }
+
+            if (_bossGlitchTextA != null && _bossGlitchTextA.gameObject.activeSelf) _bossGlitchTextA.gameObject.SetActive(false);
+            if (_bossGlitchTextB != null && _bossGlitchTextB.gameObject.activeSelf) _bossGlitchTextB.gameObject.SetActive(false);
+
+            // ---------------- 电视关机 ----------------
+            if (crt)
+            {
+                float lineT = Mathf.Clamp01((t - CrtStart) / (CrtLineEnd - CrtStart));
+                float dotT = Mathf.Clamp01((t - CrtLineEnd) / (CrtDotEnd - CrtLineEnd));
+
+                float sx = 1f;
+                float sy = 1f;
+
+                if (t < CrtLineEnd) sy = Mathf.Lerp(1f, 0.008f, lineT);
+                else { sy = 0.008f; sx = Mathf.Lerp(1f, 0.004f, dotT); }
+
+                if (_bossRoot != null) _bossRoot.localScale = new Vector3(sx, sy, 1f);
+
+                // 收成点之后立刻清空，避免中心留一个像素点
+                if (dotT >= 0.98f) HideBossContent();
+            }
+            else if (_bossRoot != null)
+            {
+                _bossRoot.localScale = Vector3.one;
             }
 
             if (_bossGroup != null) _bossGroup.alpha = Mathf.Clamp01(t / 0.2f);

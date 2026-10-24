@@ -306,6 +306,7 @@ namespace PhigrosLoading
                 SliderRow("图标高度", ref cfg.DiffHeight, 40f, 800f, "0");
                 SliderRow("离右边距", ref cfg.DiffRight, 0f, 800f, "0");
                 SliderRow("离底边距", ref cfg.DiffBottom, 0f, 800f, "0");
+                ToggleRow("显示谱面特效评级（T2/T3/T4）", ref cfg.ShowFxRating);
             }
 
             if (Fold("time", "时长"))
@@ -382,6 +383,7 @@ namespace PhigrosLoading
 
                 SliderRow("数字大小", ref cfg.BossGgNumberSize, 0.3f, 6f, "0.00");
                 SliderRow("括号大小", ref cfg.BossGgLabelSize, 0.1f, 3f, "0.00");
+                ToggleRow("数字滚动（老虎机效果）", ref cfg.BossRoll);
             }
 
             if (Fold("tune", "演出参数"))
@@ -390,6 +392,7 @@ namespace PhigrosLoading
                 SliderRow("圆圈大小", ref cfg.BossScale, 0.5f, 1.8f, "0.00");
                 SliderRow("数字大小(TUF)", ref cfg.BossDigitScale, 0.6f, 1.6f, "0.00");
                 SliderRow("故障强度(0=关)", ref cfg.BossGlitch, 0f, 2f, "0.00");
+                ToggleRow("演出期间锁输入", ref cfg.LockInputDuringIntro);
             }
 
             if (Fold("tiers", "分档一览", false))

@@ -163,6 +163,15 @@ namespace PhigrosLoading
         /// <summary>GG 演出：&lt;Lv.&gt; 括号与文字大小倍率（基准 250px）</summary>
         public float BossGgLabelSize = 0.25f;
 
+        /// <summary>GG 演出：数字上升时像老虎机一样滚动</summary>
+        public bool BossRoll = true;
+
+        /// <summary>演出期间锁住谱面输入</summary>
+        public bool LockInputDuringIntro = true;
+
+        /// <summary>在选关/加载界面显示谱面特效评级（T2/T3/T4）</summary>
+        public bool ShowFxRating = true;
+
         /// <summary>色块扫过一次的时长（秒）</summary>
         public float BarSweepSeconds = 1.1f;
 
@@ -229,6 +238,9 @@ namespace PhigrosLoading
             BossRatingSource = d.BossRatingSource;
             BossGgNumberSize = d.BossGgNumberSize;
             BossGgLabelSize = d.BossGgLabelSize;
+            BossRoll = d.BossRoll;
+            LockInputDuringIntro = d.LockInputDuringIntro;
+            ShowFxRating = d.ShowFxRating;
             BarSweepSeconds = d.BarSweepSeconds;
             BarSweepWidth = d.BarSweepWidth;
             PercentFont = d.PercentFont;

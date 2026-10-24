@@ -18,6 +18,7 @@ namespace PhigrosLoading
         public string Author = "";
         public int Difficulty = -1;
         public string Mark = "";
+        public string FxMark;
 
         public string LevelPath = "";
         public bool IsInternal;
@@ -372,6 +373,15 @@ namespace PhigrosLoading
                 }
             }
             if (string.IsNullOrEmpty(mark)) mark = RatingMarks.Unranked;
+
+            if (Main.Config == null || Main.Config.ShowFxRating)
+            {
+                FxMark = IsInternal ? null : FxRating.Get(LevelPath);
+            }
+            else
+            {
+                FxMark = null;
+            }
 
             if (Mark == mark && DifficultySprite != null) return;
             Mark = mark;

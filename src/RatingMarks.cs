@@ -137,6 +137,21 @@ namespace PhigrosLoading
         // ------------------------------------------------------------------
         // 图标
         // ------------------------------------------------------------------
+        /// <summary>Marks 目录里是否存在这张图标。</summary>
+        public static bool HasIcon(string mark)
+        {
+            try
+            {
+                EnsureInit();
+                if (string.IsNullOrEmpty(mark) || string.IsNullOrEmpty(_marksDir)) return false;
+                return File.Exists(Path.Combine(_marksDir, mark + ".png"));
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static Sprite Icon(string mark)
         {
             if (string.IsNullOrEmpty(mark)) mark = Unranked;

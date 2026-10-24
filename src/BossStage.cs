@@ -12,12 +12,25 @@ namespace PhigrosLoading
     {
         public static bool Active { get; private set; }
 
+        /// <summary>演出期间锁住谱面输入。</summary>
+        public static bool InputLocked
+        {
+            get
+            {
+                return Active
+                    && Main.Config != null
+                    && Main.Config.LockInputDuringIntro
+                    && Main.Config.AnimStyle != null
+                    && (string.Equals(Main.Config.AnimStyle, "boss", StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
         private LoadingAnim _anim;
         private CanvasGroup _group;
         private float _duration;
         private float _elapsed;
 
-        public static void Play(string mark, string gg)
+        public static void Play(string mark, string gg, string fxMark)
         {
             Disconnect();
 
@@ -50,6 +63,7 @@ namespace PhigrosLoading
                 stage._anim.SetRating(mark, gg);
                 stage._anim.SetVisible(true);
                 stage._duration = stage._anim.BossDuration(Main.Config) + 0.9f;
+
 
                 Active = true;
                 Main.Info("boss stage: start for " + mark + " (" + stage._duration.ToString("0.0") + "s)");

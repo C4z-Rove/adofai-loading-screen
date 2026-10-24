@@ -80,6 +80,7 @@ namespace PhigrosLoading
 
         private readonly Badge _markBadge = new Badge();
         private readonly Badge _judgeBadge = new Badge();
+        private readonly Badge _fxBadge = new Badge();
 
         private scnCLS _owner;
         private string _levelKey;
@@ -116,6 +117,7 @@ namespace PhigrosLoading
             float dt = Time.unscaledDeltaTime;
             FadeStep(_markBadge, dt);
             FadeStep(_judgeBadge, dt);
+            FadeStep(_fxBadge, dt);
 
             if (Time.unscaledTime < _nextRefresh) return;
             _nextRefresh = Time.unscaledTime + 0.3f;
@@ -193,6 +195,7 @@ namespace PhigrosLoading
                 _owner = cls;
                 _markBadge.Reset();
                 _judgeBadge.Reset();
+                _fxBadge.Reset();
                 _levelKey = null;
             }
 
@@ -230,6 +233,40 @@ namespace PhigrosLoading
             else
             {
                 _markBadge.Target = 0f;
+            }
+
+            // ---------- 谱面特效（T 系列） ----------
+            if (Main.Config == null || Main.Config.ShowFxRating)
+            {
+                string fx = FxRating.Get(levelPath);
+                if (!string.IsNullOrEmpty(fx))
+                {
+                    Sprite fxSprite = RatingMarks.Icon(fx);
+                    if (fxSprite != null)
+                    {
+                        _fxBadge.Ensure(parent, "PhigrosClsFx");
+                        _fxBadge.SetSprite(fxSprite);
+                        if (_fxBadge.ShownValue != fx)
+                        {
+                            _fxBadge.ShownValue = fx;
+                            Main.Info("cls fx badge: " + fx + " for " + (levelPath ?? key));
+                        }
+
+                        Vector2 fxPos;
+                        float fxSize;
+                        ComputeMarkPos(cls, out fxPos, out fxSize);
+                        fxPos += new Vector2(fxSize * 0.62f, fxSize * -0.48f);
+                        ApplyPosition(_fxBadge, fxPos, fxSize * 0.52f);
+                    }
+                }
+                else
+                {
+                    _fxBadge.Target = 0f;
+                }
+            }
+            else
+            {
+                _fxBadge.Target = 0f;
             }
 
             // ---------- 判定 ----------

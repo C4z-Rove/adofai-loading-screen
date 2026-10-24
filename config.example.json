@@ -52,8 +52,11 @@
   "BossGlitch": 1.0,
   "BossDigitScale": 1.0,
   "BossRatingSource": "gg",
-  "BossGgNumberSize": 4.0,
-  "BossGgLabelSize": 0.25,
+  "BossGgNumberSize": 4.76853943,
+  "BossGgLabelSize": 0.23370786,
+  "BossRoll": false,
+  "LockInputDuringIntro": true,
+  "ShowFxRating": true,
   "BarSweepSeconds": 1.1,
   "BarSweepWidth": 0.25,
   "PercentFont": 24.0

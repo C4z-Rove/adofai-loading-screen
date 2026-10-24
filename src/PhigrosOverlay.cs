@@ -43,6 +43,8 @@ namespace PhigrosLoading
         private Text _artist;
         private Text _chart;
         private Image _difficulty;
+        private Image _fx;
+        private RectTransform _fxRect;
         private Image _exitBlack;
         private RectTransform _difficultyRect;
 
@@ -297,6 +299,16 @@ namespace PhigrosLoading
             {
                 _difficulty.sprite = null;
                 _difficulty.gameObject.SetActive(false);
+
+            _fxRect = UiKit.Rect("FxRating", transform);
+            _fxRect.anchorMin = new Vector2(1f, 0f);
+            _fxRect.anchorMax = new Vector2(1f, 0f);
+            _fxRect.pivot = new Vector2(1f, 0f);
+            _fxRect.anchoredPosition = new Vector2(-470f, 96f);
+            _fxRect.sizeDelta = new Vector2(170f, 170f);
+            _fx = UiKit.Image(_fxRect, Color.white, null);
+            _fx.preserveAspect = true;
+            _fx.gameObject.SetActive(false);
             }
         }
 

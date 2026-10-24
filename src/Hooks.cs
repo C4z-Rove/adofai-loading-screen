@@ -5,6 +5,26 @@ using UnityEngine;
 
 namespace PhigrosLoading
 {
+    /// <summary>演出期间挡住谱面输入（避免动画还没播完就开始打谱）。</summary>
+    [HarmonyPatch(typeof(scrController), "Update")]
+    internal static class Patch_ControllerUpdate
+    {
+        private static bool Prefix()
+        {
+            try
+            {
+                if (!BossStage.InputLocked) return true;
+
+                UnityEngine.Input.ResetInputAxes();
+                return false;
+            }
+            catch
+            {
+                return true;
+            }
+        }
+    }
+
     /// <summary>
     /// 进入关卡时接管黑屏；离开关卡前弹出评级。
     /// </summary>
@@ -131,7 +151,7 @@ namespace PhigrosLoading
                         ggText = AutoRatingBridge.GetCachedGG(info.LevelPath);
                     }
 
-                    BossStage.Play(info.Mark, ggText);
+                    BossStage.Play(info.Mark, ggText, info.FxMark);
                     return;
                 }
 
