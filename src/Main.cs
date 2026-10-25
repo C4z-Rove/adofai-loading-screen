@@ -14,7 +14,8 @@ namespace PhigrosLoading
         public static Settings Config = new Settings();
 
         /// <summary>模组版本（显示在面板上）。</summary>
-        public const string VersionText = "3.1.2";
+        /// <summary>模组版本（启动时从 Info.json 读取，读不到就用内置值）。</summary>
+        public static string VersionText = "3.5.8";
 
         /// <summary>UMM 里这个模组是否启用（关掉时所有元素立即隐藏/停止工作）。</summary>
         public static bool Active;
@@ -53,7 +54,8 @@ namespace PhigrosLoading
                 // 让加载动画在窗口失焦/后台时也继续跑
                 Application.runInBackground = true;
 
-                Log.Log("Adofai Loading Screen v3.5.7 loaded. ModPath = " + ModPath);
+                ReadVersionFromInfo();
+                Log.Log("Adofai Loading Screen v" + VersionText + " loaded. ModPath = " + ModPath);
                 return true;
             }
             catch (Exception e)
@@ -121,6 +123,23 @@ namespace PhigrosLoading
         }
 
         private static bool _waitingHotkey;
+        private static void ReadVersionFromInfo()
+        {
+            try
+            {
+                string path = System.IO.Path.Combine(ModPath, "Info.json");
+                if (!System.IO.File.Exists(path)) return;
+
+                System.Text.RegularExpressions.Match match =
+                    System.Text.RegularExpressions.Regex.Match(System.IO.File.ReadAllText(path), "\"Version\"\\s*:\\s*\"([^\"]+)\"");
+                if (match.Success) VersionText = match.Groups[1].Value;
+            }
+            catch (Exception e)
+            {
+                Error(e);
+            }
+        }
+
         private static void OnGUI(UnityModManager.ModEntry modEntry)
         {
             try

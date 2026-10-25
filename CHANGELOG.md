@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.8
+- **Version number now has a single source of truth**: the mod reads `Version` from its own `Info.json` at load
+  time, so the UMM panel header, the log line and the update checker can no longer disagree (the panel used to show a
+  hard-coded `3.1.2`).
 ## 3.5.7
 - Startup update check: queries the GitHub releases API once (background thread, silently ignored when offline) and
   shows a **「发现新版本 x.y.z」** banner with a download button at the top of the UMM panel.
