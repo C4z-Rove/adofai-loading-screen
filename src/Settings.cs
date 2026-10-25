@@ -54,6 +54,9 @@ namespace PhigrosLoading
         /// <summary>游戏进行中在右下角显示评级文字</summary>
         public bool InGameDifficulty = true;
 
+        /// <summary>局内左下角显示曲名</summary>
+        public bool InGameTitle = true;
+
         /// <summary>评级弹窗里用 AutoRating 的结果作为建议并预选</summary>
         public bool AutoRatingSuggest = true;
 
@@ -197,6 +200,7 @@ namespace PhigrosLoading
             ExitAnimation = d.ExitAnimation;
             ExitStyle = d.ExitStyle;
             InGameDifficulty = d.InGameDifficulty;
+            InGameTitle = d.InGameTitle;
             AutoRatingSuggest = d.AutoRatingSuggest;
             AutoRatingDisplay = d.AutoRatingDisplay;
             ClsBadge = d.ClsBadge;

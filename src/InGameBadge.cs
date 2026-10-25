@@ -212,11 +212,11 @@ public class InGameBadge : MonoBehaviour
 			return;
 		}
 		bool flag = false;
-		if (Main.Config == null || Main.Config.InGameDifficulty)
+		if (Main.Config == null || Main.Config.InGameDifficulty || Main.Config.InGameTitle)
 		{
 			try
 			{
-				if (ADOBase.isScnGame && !ADOBase.isLevelEditor)
+				if (ADOBase.isScnGame || ADOBase.isLevelEditor)
 				{
 					scrController instance = scrController.instance;
 					scnGame instance2 = scnGame.instance;
@@ -243,6 +243,32 @@ public class InGameBadge : MonoBehaviour
 			try
 			{
 				scnGame instance3 = scnGame.instance;
+				string editorPath = ADOBase.levelPath;
+				if ((Object)(object)instance3 == (Object)null && !string.IsNullOrEmpty(editorPath))
+				{
+					// 关卡编辑器播放：没有 scnGame，用 ADOBase.levelPath
+					AutoRatingBridge.CacheFor(editorPath);
+					string editorMark = RatingMarks.GetMark(editorPath);
+					if (!string.IsNullOrEmpty(editorMark)) mark = editorMark;
+
+					if (Main.Config == null || Main.Config.AutoRatingDisplay)
+					{
+						string liveMark;
+						string liveGg;
+						double liveStar;
+						AutoRatingBridge.TryGetLive(out liveMark, out liveStar, out liveGg);
+						string text2 = AutoRatingBridge.Format(liveMark, liveGg);
+						if (!string.IsNullOrEmpty(text2)) mark = text2;
+					}
+
+					try
+					{
+						title = System.IO.Path.GetFileNameWithoutExtension(editorPath);
+					}
+					catch
+					{
+					}
+				}
 				if ((Object)(object)instance3 != (Object)null)
 				{
 					if (!string.IsNullOrEmpty(instance3.levelPath))
@@ -275,6 +301,11 @@ public class InGameBadge : MonoBehaviour
 			catch (Exception e2)
 			{
 				Main.Error(e2);
+			}
+			if (Main.Config != null)
+			{
+				if (!Main.Config.InGameTitle) title = "";
+				if (!Main.Config.InGameDifficulty) mark = "";
 			}
 			SetTexts(title, mark);
 		}

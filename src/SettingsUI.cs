@@ -246,6 +246,8 @@ namespace PhigrosLoading
                 ToggleRow("离开关卡时弹评级窗", ref cfg.RatingPrompt);
                 ToggleRow("已评级时跳过评级窗", ref cfg.SkipRatedPrompt);
                 ToggleRow("退出关卡播放转场", ref cfg.ExitAnimation);
+                ToggleRow("局内左下角显示曲名", ref cfg.InGameTitle);
+                ToggleRow("局内右下角显示评级", ref cfg.InGameDifficulty);
                 ToggleRow("修复语言被锁成中文", ref cfg.FixLanguage);
             }
 

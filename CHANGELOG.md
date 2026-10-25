@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.5.6
+- In-game corner labels are split into two independent switches: **song title (bottom-left)** and **rating
+  (bottom-right)**. Both default on.
+
+## 3.5.5
+- The in-game corner labels now also show while playing a chart from the **level editor** (they were explicitly
+  excluded there). In the editor the song title falls back to the file name and ratings come from
+  `ADOBase.levelPath` instead of `scnGame.instance`.
 ## 3.5.4
 - **Chart FX rating (T tiers)** shown in the CLS panel, bottom-right of the difficulty badge: parses the
   `.adofai` file and weights visual events (Flash / Bloom 1.5, filters 1.2, decorations 1.0, camera and
