@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.5.7
+- Startup update check: queries the GitHub releases API once (background thread, silently ignored when offline) and
+  shows a **「发现新版本 x.y.z」** banner with a download button at the top of the UMM panel.
+- `Info.json` now carries a `Repository` field, so UMM shows a **Home page** button for the mod.
+- The About tab has a direct **GitHub 仓库** button.
 ## 3.5.6
 - In-game corner labels are split into two independent switches: **song title (bottom-left)** and **rating
   (bottom-right)**. Both default on.

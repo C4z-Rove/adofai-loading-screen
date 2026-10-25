@@ -199,6 +199,14 @@ namespace PhigrosLoading
             GUILayout.Label("v" + (Main.VersionText ?? ""), _muted);
             GUILayout.EndHorizontal();
 
+            if (UpdateCheck.HasUpdate)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("发现新版本 " + UpdateCheck.LatestTag + "（当前 v" + Main.VersionText + "）", _value);
+                if (GUILayout.Button("去下载", _button, GUILayout.Width(90f))) UpdateCheck.OpenReleases();
+                GUILayout.EndHorizontal();
+            }
+
             GUILayout.Space(2f);
 
             // 标签页
@@ -425,6 +433,7 @@ namespace PhigrosLoading
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("预览一次", _button, GUILayout.Width(120f))) Main.StartPreview();
             if (GUILayout.Button("打开模组目录", _button, GUILayout.Width(140f))) Main.OpenModFolder();
+            if (GUILayout.Button("GitHub 仓库", _button, GUILayout.Width(140f))) UpdateCheck.OpenRepo();
             GUILayout.EndHorizontal();
 
             GUILayout.EndVertical();

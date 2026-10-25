@@ -49,10 +49,11 @@ namespace PhigrosLoading
                 modEntry.OnToggle = OnToggle;
                 Active = true;
                 PhigrosOverlay.PurgeStaleOverlays();
+                UpdateCheck.Check();
                 // 让加载动画在窗口失焦/后台时也继续跑
                 Application.runInBackground = true;
 
-                Log.Log("Adofai Loading Screen v3.5.6 loaded. ModPath = " + ModPath);
+                Log.Log("Adofai Loading Screen v3.5.7 loaded. ModPath = " + ModPath);
                 return true;
             }
             catch (Exception e)

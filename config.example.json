@@ -15,6 +15,7 @@
   "ExitAnimation": true,
   "ExitStyle": "auto",
   "InGameDifficulty": true,
+  "InGameTitle": true,
   "AutoRatingSuggest": true,
   "AutoRatingDisplay": true,
   "ClsBadge": true,
